@@ -1,0 +1,2 @@
+# selfNoticeService
+对于一些服务和通知等信息的整合的服务工程
