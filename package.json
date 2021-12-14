@@ -14,7 +14,7 @@
         "release": "nest build && pm2 start --name TnyService dist/src/main.js",
         "prebuild": "rimraf dist",
         "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-        "lint": "eslint \"{src,apps,libs,test,utils,common}/**/*.{js,jsx,ts,tsx,json,less,css}\" --fix",
+        "lint": "eslint \"{src,apps,libs,test,utils,common}/**/*.{js,jsx,ts,tsx,less,css}\" --fix",
         "test": "jest",
         "test:watch": "jest --watch",
         "test:cov": "jest --coverage",
@@ -67,7 +67,7 @@
         }
     },
     "lint-staged": {
-        "{src,apps,libs,test,utils,common}/**/*.{js,jsx,ts,tsx,json,less,css}": [
+        "{src,apps,libs,test,utils,common}/**/*.{js,jsx,ts,tsx,less,css}": [
             "prettier --write",
             "eslint --fix",
             "git add"
