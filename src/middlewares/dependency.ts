@@ -1,5 +1,5 @@
-import * as Cors from "cors"
 import * as Helmet from "helmet"
+import * as csurf from "csurf"
 import * as rateLimit from "express-rate-limit"
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger"
 import { ValidationPipe } from "@nestjs/common"
@@ -13,7 +13,7 @@ export const dependency = (app) => {
 	SwaggerModule.setup("devDoc", app, document)
 	// 配置中间件
 	app.use(Helmet())
-	app.use(Cors())
+	app.use(csurf())
 	app.use(
 		rateLimit({
 			windowMs: 10 * 60 * 1000,
