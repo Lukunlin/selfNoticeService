@@ -1,8 +1,11 @@
 import { NestFactory } from "@nestjs/core"
 import { AppModule } from "./app.module"
+import { dependency } from "./middlewares/dependency"
+import { PORT } from "./config/startConfig"
 
-async function bootstrap() {
+async function startService() {
 	const app = await NestFactory.create(AppModule)
-	await app.listen(3000)
+	dependency(app)
+	await app.listen(PORT)
 }
-bootstrap()
+startService()
