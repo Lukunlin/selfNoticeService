@@ -1,0 +1,10 @@
+{
+    "semi": false,
+    "tabWidth": 4,
+    "useTabs": true,
+    "printWidth": 666,
+    "bracketSpacing": true,
+    "trailingComma": "none",
+    "eslintIntegration": true,
+    "overrides": []
+}
