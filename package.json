@@ -1,6 +1,6 @@
 {
-    "name": "nestjs-study",
-    "version": "0.0.1",
+    "name": "selfNoticeService",
+    "version": "0.0.6",
     "description": "",
     "author": "",
     "private": true,
@@ -11,7 +11,7 @@
         "dev:debug": "nest start --debug --watch",
         "dev:prod": "nest build && node dist/src/main.js",
         "build": "nest build",
-        "release": "nest build && pm2 start --name TnyService dist/src/main.js",
+        "release": "nest build && pm2 start --name selfNoticeService dist/src/main.js",
         "prebuild": "rimraf dist",
         "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
         "lint": "eslint \"{src,apps,libs,test,utils,common}/**/*.{js,jsx,ts,tsx,less,css}\" --fix",
