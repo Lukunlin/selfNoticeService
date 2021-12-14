@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common"
 
 @Injectable()
 export class CzbGitNoticeService {
-	pushNotice() {
+	async pushNotice(body) {
 		return "Hi, my friend"
 	}
 }

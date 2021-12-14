@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common"
 import { AppController } from "./app.controller"
 import { AppService } from "./app.service"
+import { CacheModule } from "../cache/cache.module"
 import { publicImportsForRoot } from "../config/publicImports"
 
 // 其他业务的注册
@@ -9,7 +10,14 @@ import { CzbGitNoticeModule } from "../business/czbGitNotice/czbGitNotice.module
 const businessModules = [CzbGitNoticeModule]
 
 @Module({
-	imports: [publicImportsForRoot(), ...businessModules],
+	imports: [
+		// 注册环境变量
+		publicImportsForRoot(),
+		// 前置注册Redis服务
+		CacheModule,
+		// 注册所有公用业务
+		...businessModules
+	],
 	controllers: [AppController],
 	providers: [AppService]
 })
