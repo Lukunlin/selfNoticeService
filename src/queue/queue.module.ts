@@ -11,7 +11,7 @@ export const register: any = () => {
 		name: "noticeMsg",
 		redis: {
 			db: 0,
-			keyPrefix: "queue",
+			keyPrefix: "selfNotice_",
 			host: process.env.DATABASE_REDIS_HOST,
 			port: Number(process.env.DATABASE_REDIS_PORT),
 			password: process.env.DATABASE_REDIS_PASSWORD

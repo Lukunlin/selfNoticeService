@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Post, Body } from "@nestjs/common"
+import { Controller, Get, Query, Post, Body, Headers } from "@nestjs/common"
 import { ApiBody, ApiTags, ApiOperation, ApiParam } from "@nestjs/swagger"
 import { CzbGitNoticeService } from "./czbGitNotice.service"
 
@@ -9,8 +9,11 @@ export class CzbGitNoticeController {
 	@Post()
 	@ApiTags("czb项目推送服务")
 	@ApiOperation({ summary: "czb项目推送服务", description: "用户对czb项目内的Gitlab触发了保护分支的推送" })
-	async pushNotice(@Body() parems: any = {}) {
-		return parems
-		// return this.appService.pushNotice()
+	async pushNotice(@Body() body, @Headers() header) {
+		return {
+			request: body,
+			headers: header
+		}
+		// return await this.appService.pushNotice(body)
 	}
 }
