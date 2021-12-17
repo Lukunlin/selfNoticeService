@@ -1,4 +1,10 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
-
+# 注意这里制定的PATH是不是和你使用的node版本一致,建议打开 .nvmrc 文件
+PATH="/usr/local/bin:$PATH"
+NODE_VERSION=`node -v`
+REQUIRE_VERSION=$(cat ./.nvmrc)
+echo "\n\033[1;1m当前使用的node版本为  ---> $NODE_VERSION, 项目要求版本为大于等于 $REQUIRE_VERSION\033[0m"
+echo "执行Git Hook根目录  ---> $(pwd)"
+# 最终执行检查lint-staged任务
 npm run lint-staged
