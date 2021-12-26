@@ -2,7 +2,7 @@ import * as Helmet from "helmet"
 import * as rateLimit from "express-rate-limit"
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger"
 import { ValidationPipe } from "@nestjs/common"
-import { ResponseInterceptor } from "../interceptors/responseInterceptor"
+import { HttpInterceptor } from "../interceptors/httpInterceptor"
 import { ErrorFilterInterceptors } from "../interceptors/errorFilterInterceptors"
 
 export const dependency = (app) => {
@@ -19,7 +19,7 @@ export const dependency = (app) => {
 		})
 	)
 	// 配置管道和拦截器
-	app.useGlobalPipes(new ValidationPipe())
-	app.useGlobalInterceptors(new ResponseInterceptor())
+	app.useGlobalPipes(new ValidationPipe({ transform: true }))
+	app.useGlobalInterceptors(new HttpInterceptor())
 	app.useGlobalFilters(new ErrorFilterInterceptors())
 }

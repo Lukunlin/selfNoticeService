@@ -2,7 +2,6 @@ import { Module } from "@nestjs/common"
 import { AppController } from "./app.controller"
 import { AppService } from "./app.service"
 import { CacheModule } from "../cache/cache.module"
-import { LoggerModule } from "../logger/logger.module"
 import { publicImportsForRoot } from "../config/publicImports"
 
 // 其他业务的注册
@@ -16,8 +15,6 @@ const businessModules = [CzbGitNoticeModule]
 		publicImportsForRoot(),
 		// 前置注册Redis服务
 		CacheModule,
-		// 注册日志服务
-		LoggerModule,
 		// 注册所有公用业务
 		...businessModules
 	],

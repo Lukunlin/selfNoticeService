@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common"
 import { logger as Logger } from "../config/logger"
 
-type TCategories = "" | "access" | "warning" | "error" | "fatal"
+type TCategories = "" | "default" | "access" | "warning" | "error" | "fatal"
 
 @Injectable()
 export class LoggerService {
@@ -12,7 +12,7 @@ export class LoggerService {
 	private fat = Logger("fat")
 
 	public write(categories: TCategories, data: any) {
-		if (categories === "") {
+		if (categories === "" || categories === "default") {
 			return this.default.debug(data)
 		} else if (categories === "access") {
 			return this.access.info(data)

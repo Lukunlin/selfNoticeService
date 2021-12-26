@@ -2,7 +2,7 @@ import * as log4js from "log4js"
 
 export const selfLayout = {
 	type: "pattern",
-	pattern: `[%d{yyyy-MM-dd hh:MM:ss}] [%p | %c]%n------ host: %h | pid: %z ---------%n%m%n-----------------------------------------------%n`
+	pattern: `[%d{yyyy-MM-dd hh:mm:ss.SSS}] [%p | %c]%n------ host: %h | pid: %z ---------%n%m%n-----------------------------------------------%n`
 }
 /*
  * 配置信息
@@ -16,7 +16,7 @@ export const loggerConfig = {
 			type: "file",
 			filename: "./logs/application.log",
 			maxLogSize: 20 * 1024 * 1024,
-			backups: 10,
+			backups: 20,
 			layout: selfLayout
 		},
 		access: {
