@@ -1,8 +1,10 @@
-import { Controller, Get, Query, Post, Body, Headers } from "@nestjs/common"
-import { ApiBody, ApiTags, ApiOperation, ApiParam } from "@nestjs/swagger"
+import { Controller, Post, Body, Headers, UseGuards } from "@nestjs/common"
+import { ApiTags, ApiOperation } from "@nestjs/swagger"
+import { checkSecretGuard } from "../../guards/permission.guard"
 import { CzbGitNoticeService } from "./czbGitNotice.service"
 
 @Controller("/czbGitNotice")
+@UseGuards(checkSecretGuard)
 export class CzbGitNoticeController {
 	constructor(private readonly appService: CzbGitNoticeService) {}
 
