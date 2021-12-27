@@ -22,6 +22,8 @@ export class HttpInterceptor<T> implements NestInterceptor<T, IResponse<T>> {
 		const ctx = context.switchToHttp()
 		const req = ctx.getRequest<IncomingMessage>()
 		const res = ctx.getResponse<ServerResponse>()
+		const header = req.headers
+		const userAgent = header["user-agent"] || header["User-Agent"] || header.userAgent
 		const requestNowFomat = Moment().format("YYYY-MM-DD HH:mm:ss.SSS")
 		const requestId = Md5(requestNowFomat).toString()
 
@@ -32,7 +34,7 @@ export class HttpInterceptor<T> implements NestInterceptor<T, IResponse<T>> {
 			const reqAny = req as any
 			const parsedUrl = reqAny._parsedUrl || {}
 			const bodyToString = JSON.stringify(reqAny.body || {})
-			const writeContent = `Host:  ${req.headers.host},  URL:  ${req.url},  Method:  ${req.method},  RequestId:  ${requestId},  httpVersion: ${req.httpVersion}\nparams:  ${parsedUrl.params || "{}"},  query:  ${parsedUrl.query || "{}"},  body:  ${bodyToString}`
+			const writeContent = `Host:  ${header.host},  URL:  ${req.url},  Method:  ${req.method},  RequestId:  ${requestId},  httpVersion: ${req.httpVersion}\nuserAgent:  ${userAgent}\nparams:  ${parsedUrl.params || "{}"},  query:  ${parsedUrl.query || "{}"},  body:  ${bodyToString}`
 			Logger.write("default", writeContent)
 			Logger.write("access", writeContent)
 		} catch (firstErr) {
