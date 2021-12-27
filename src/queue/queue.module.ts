@@ -1,6 +1,6 @@
 import { Module, Global } from "@nestjs/common"
 import { BullModule } from "@nestjs/bull"
-import { QueueService } from "./queue.service"
+import { NoticeService } from "./queue.service"
 import { NoticeMsgProcessor } from "./queue.processor"
 
 /**
@@ -11,7 +11,7 @@ export const register: any = () => {
 		name: "noticeMsg",
 		redis: {
 			db: 0,
-			keyPrefix: "selfNotice_",
+			keyPrefix: "selfNotice_Wecom",
 			host: process.env.DATABASE_REDIS_HOST,
 			port: Number(process.env.DATABASE_REDIS_PORT),
 			password: process.env.DATABASE_REDIS_PASSWORD
@@ -26,7 +26,7 @@ export const register: any = () => {
 @Module({
 	imports: [register()],
 	controllers: [],
-	providers: [QueueService, NoticeMsgProcessor],
-	exports: [QueueService, NoticeMsgProcessor]
+	providers: [NoticeService, NoticeMsgProcessor],
+	exports: [NoticeService, NoticeMsgProcessor]
 })
 export class QueueModule {}
