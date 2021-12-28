@@ -36,7 +36,7 @@ export class CzbGitNoticeService {
 	public async pushNewsToWecom(body: IGitlabWebHooks) {
 		const ProjectName = body.project.name || "unknow"
 		const LastAuthor = body.user_name || "unknow"
-		const Warehouse = body.project.web_url || "https://gitlab.nlsaas.com/"
+		const Warehouse = body.project.web_url || "https://gitlab.nlsaas.com"
 		const Method = body.event_name
 		const CommitCount = body.total_commits_count || 0
 		const CommitList = body.commits || []
