@@ -67,8 +67,8 @@ export class CzbGitNoticeService {
 				news: {
 					articles: [
 						{
-							url: this.getRandomImage(),
-							picurl: this.targetUrl,
+							url: Warehouse,
+							picurl: this.getRandomImage(),
 							title: pushTitle,
 							description: pushDescription
 						}
