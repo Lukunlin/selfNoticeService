@@ -86,12 +86,20 @@ export class HttpInterceptor<T> implements NestInterceptor<T, IResponse<T>> {
 					const responseNow = Date.now()
 					const responseNowFomat = Moment().format("YYYY-MM-DD HH:mm:ss.SSS")
 					const useTimer = responseNow - requestNow
-					const writeResult = `RequestId:  ${requestId},  useTimer: ${useTimer}ms,  ResultDate:  ${responseNowFomat}\nresponse:  ${JSON.stringify(dataResult)}`
+					let resultStringify
+					try {
+						resultStringify = JSON.stringify(dataResult)
+					} catch (striErr) {
+						resultStringify = "Error"
+					}
+					const writeResult = `RequestId:  ${requestId},  useTimer: ${useTimer}ms,  ResultDate:  ${responseNowFomat}\nresponse:  ${resultStringify}`
 					if (isDev) {
 						console.log(`执行完结束时间 = ${Moment().format("YYYY-MM-DD HH:mm:ss.SSS")} : ${useTimer}ms`)
 					}
-					Logger.write("default", writeResult)
-					Logger.write("access", writeResult)
+					try {
+						Logger.write("default", writeResult)
+						Logger.write("access", writeResult)
+					} catch (wriErr) {}
 				})
 			)
 	}
