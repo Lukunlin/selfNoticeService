@@ -6,7 +6,7 @@ import * as Moment from "moment"
 export class CzbGitNoticeService {
 	constructor(private readonly httpService: HttpService) {}
 
-	protected static readonly bannerImgArray: string[] = [
+	protected readonly bannerImgArray: string[] = [
 		"https://prd-1258898587.cos.ap-beijing.myqcloud.com/public/2021/12/28/13/ad6df1610475a931f0c128cc754a.jpeg",
 		"https://prd-1258898587.cos.ap-beijing.myqcloud.com/public/2021/12/28/13/4834ee161fe8a6ba00296ac0a007.jpeg",
 		"https://prd-1258898587.cos.ap-beijing.myqcloud.com/public/2021/12/28/13/7301481de7f3d1535afb81f2e0ae.jpeg",
@@ -16,7 +16,24 @@ export class CzbGitNoticeService {
 	]
 	protected readonly targetUrl: string = `https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=${process.env.WECHAT_NOTICE_WEBSOKET}`
 
-	async pushNewsToWecom(body: IGitlabWebHooks) {
+	protected getRandomNumber(minNum: number, maxNum: number) {
+		switch (arguments.length) {
+			case 1:
+				return parseInt(String(Math.random() * minNum + 1), 10)
+				break
+			case 2:
+				return parseInt(String(Math.random() * (maxNum - minNum + 1) + minNum), 10)
+				break
+			default:
+				return 0
+				break
+		}
+	}
+	public getRandomImage() {
+		const randomNumber = this.getRandomNumber(0, this.bannerImgArray.length - 1)
+		return this.bannerImgArray[randomNumber]
+	}
+	public async pushNewsToWecom(body: IGitlabWebHooks) {
 		const ProjectName = body.project.name || "unknow"
 		const LastAuthor = body.user_name || "unknow"
 		const Warehouse = body.project.web_url || "https://gitlab.nlsaas.com/"
@@ -32,14 +49,14 @@ export class CzbGitNoticeService {
 			return false
 		}
 		const pushTitle = `项目 [${ProjectName}] 收到关键分支更新提醒`
-		let pushDescription = `\n本次更新分支为: [${updatedBranch}],  最后更新人: ${LastAuthor}`
+		let pushDescription = `\n本次更新分支为: [${updatedBranch}]\n最后更新人: ${LastAuthor}`
 		pushDescription += `\n推送时间为: ${CurrentDate}`
 		if (CommitItem && Object.keys(CommitItem).length) {
 			if (CommitItem.timestamp) {
 				pushDescription += `\n最后Commit更新时间: ${Moment(CommitItem.timestamp).format("YYYY-MM-DD HH:mm:ss")}`
 			}
 			if (CommitItem.message || CommitItem.title) {
-				pushDescription += `\n以下为本次最后更新的commit内容\n${CommitItem.message || CommitItem.title}`
+				pushDescription += `\n以下为本次最后更新的commit内容:\n${CommitItem.message || CommitItem.title}`
 			}
 		}
 		pushDescription += `\n本次更新的commit提交数量为: ${CommitCount}`
@@ -50,7 +67,7 @@ export class CzbGitNoticeService {
 				news: {
 					articles: [
 						{
-							url: Warehouse,
+							url: this.getRandomImage(),
 							picurl: this.targetUrl,
 							title: pushTitle,
 							description: pushDescription
