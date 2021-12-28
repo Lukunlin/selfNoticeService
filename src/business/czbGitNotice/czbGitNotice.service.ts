@@ -62,20 +62,22 @@ export class CzbGitNoticeService {
 		pushDescription += `\n本次更新的commit提交数量为: ${CommitCount}`
 
 		try {
-			const pushResult = await this.httpService.post(this.targetUrl, {
-				msgtype: "news",
-				news: {
-					articles: [
-						{
-							url: Warehouse,
-							picurl: this.getRandomImage(),
-							title: pushTitle,
-							description: pushDescription
-						}
-					]
-				}
-			})
-			return pushResult
+			await this.httpService
+				.post(this.targetUrl, {
+					msgtype: "news",
+					news: {
+						articles: [
+							{
+								url: Warehouse,
+								picurl: this.getRandomImage(),
+								title: pushTitle,
+								description: pushDescription
+							}
+						]
+					}
+				})
+				.toPromise()
+			return true
 		} catch (err) {
 			return false
 		}
