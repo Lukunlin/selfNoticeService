@@ -42,6 +42,7 @@ export class CzbGitNoticeService {
 				pushDescription += `\n以下为本次最后更新的commit内容\n${CommitItem.message || CommitItem.title}`
 			}
 		}
+		pushDescription += `\n本次更新的commit提交数量为: ${CommitCount}`
 
 		try {
 			const pushResult = await this.httpService.post(this.targetUrl, {
@@ -57,7 +58,7 @@ export class CzbGitNoticeService {
 					]
 				}
 			})
-			return true
+			return pushResult
 		} catch (err) {
 			return false
 		}
