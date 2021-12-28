@@ -22,7 +22,7 @@ export const loggerConfig = {
 		access: {
 			type: "dateFile",
 			filename: "./logs/access/date",
-			pattern: "-yyyy-MM-dd-hh.log",
+			pattern: "yyyy-MM-dd-hh.log",
 			compress: true,
 			encoding: "utf-8",
 			alwaysIncludePattern: true,
