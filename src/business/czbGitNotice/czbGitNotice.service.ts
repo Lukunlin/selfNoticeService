@@ -1,6 +1,6 @@
 import { Injectable, HttpService } from "@nestjs/common"
 import { IGitlabWebHooks } from "../../../types/gitlabHook"
-import * as Moment from "Moment"
+import * as Moment from "moment"
 
 @Injectable()
 export class CzbGitNoticeService {
