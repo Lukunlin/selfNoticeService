@@ -5,7 +5,7 @@ import * as Moment from "moment"
 
 @Processor("noticeMsg")
 export class NoticeMsgProcessor {
-	protected readonly targetUrl: string = `https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=${process.env.WECHAT_NOTICE_WEBSOKET}`
+	protected readonly targetUrl: string = `https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=${process.env.WECHOM_NOTICE_DEPARTMENT}`
 
 	@Process("noticeMessage")
 	handleTranscode(job: Job) {

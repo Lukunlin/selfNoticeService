@@ -14,7 +14,7 @@ export class CzbGitNoticeService {
 		"https://prd-1258898587.cos.ap-beijing.myqcloud.com/public/2021/12/28/13/170329e6d7aa9ac92cb9487ea123.jpeg",
 		"https://prd-1258898587.cos.ap-beijing.myqcloud.com/public/2021/12/28/13/b77368ce5a9418898ddce8a15aff.jpeg"
 	]
-	protected readonly targetUrl: string = `https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=${process.env.WECHAT_NOTICE_WEBSOKET}`
+	protected readonly targetUrl: string = `https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=${process.env.WECHOM_NOTICE_DEPARTMENT}`
 
 	protected getRandomNumber(minNum: number, maxNum: number) {
 		switch (arguments.length) {
@@ -44,11 +44,28 @@ export class CzbGitNoticeService {
 		const CurrentDate = Moment().format("YYYY-MM-DD HH:mm:ss")
 		const updatedBranchSplit = (body.ref || "").split("/")
 		const updatedBranch = updatedBranchSplit[updatedBranchSplit.length - 1] || "unknow"
+		let projectChineseName = "项目"
 
 		if (Method !== "push") {
 			return false
 		}
-		const pushTitle = `项目 [${ProjectName}] 收到关键分支更新提醒`
+		if (ProjectName === "mp") {
+			const MainBranchArrs = (process.env.SAAS_MP_MAIN_BRANCH || "master").split(",")
+			if (!MainBranchArrs.includes(updatedBranch)) {
+				// 不在白名单的分支不推送
+				return false
+			}
+			projectChineseName = "Saas商户平台"
+		} else if (ProjectName === "taro_micro") {
+			projectChineseName = "Saas快捷加油小程序"
+		} else if (ProjectName === "webAppService") {
+			projectChineseName = "Saas公众号H5"
+		} else if (ProjectName === "mp_micro") {
+			projectChineseName = "Saas商家助手小程序"
+		} else if (ProjectName === "mini_micro") {
+			projectChineseName = "流量版小程序"
+		}
+		const pushTitle = `${projectChineseName} [${ProjectName}] 收到关键分支更新提醒`
 		let pushDescription = `\n本次更新分支为: [${updatedBranch}]\n最后更新人: ${LastAuthor}`
 		pushDescription += `\n推送时间为: ${CurrentDate}`
 		if (CommitItem && Object.keys(CommitItem).length) {
@@ -68,7 +85,7 @@ export class CzbGitNoticeService {
 					news: {
 						articles: [
 							{
-								url: Warehouse,
+								url: `${Warehouse}/-/commit/${CommitItem.id}`,
 								picurl: this.getRandomImage(),
 								title: pushTitle,
 								description: pushDescription
