@@ -3,9 +3,13 @@ import { Process, Processor } from "@nestjs/bull"
 import { Job } from "bull"
 import * as Moment from "moment"
 
+// 获取请求实例
+const httpService = new HttpService()
+
 @Processor("noticeMsg")
 export class NoticeMsgProcessor {
-	protected readonly targetUrl: string = `https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=${process.env.WECHOM_NOTICE_DEPARTMENT}`
+	protected readonly targetUrl: string = `https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=${process.env.WECHOM_NOTICE_SELF}`
+	protected readonly targetCzbUrl: string = `https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=${process.env.WECHOM_NOTICE_DEPARTMENT}`
 
 	@Process("noticeMessage")
 	handleTranscode(job: Job) {
@@ -13,13 +17,26 @@ export class NoticeMsgProcessor {
 		const pageNum = (<any>(job.opts || {})).pageNum
 		const beforeMsgHeader = `ID: ${id}${typeof pageNum === "number" ? ` (${pageNum})页` : ""} ------> ${Moment().format("YYYY/MM/DD HH:mm:ss")}\n`
 		const sendMsg = `${beforeMsgHeader}${data}`
-		const httpService = new HttpService()
+
 		httpService
 			.post(this.targetUrl, {
 				msgtype: "text",
 				text: {
 					content: sendMsg,
 					mentioned_mobile_list: [process.env.MOBILE_NUMBER]
+				}
+			})
+			.toPromise()
+	}
+
+	@Process("noticeForCzb")
+	handleTranscodeToCzb(job: Job) {
+		httpService
+			.post(this.targetCzbUrl, {
+				msgtype: "text",
+				text: {
+					content: job.data || "推送消息发生错误",
+					mentioned_mobile_list: [process.env.MOBILE_NUMBER, "@all"]
 				}
 			})
 			.toPromise()

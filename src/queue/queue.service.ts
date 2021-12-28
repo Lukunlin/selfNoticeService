@@ -9,4 +9,8 @@ export class NoticeService {
 	public pushNoticeMsg(Msg: string, options: any = {}) {
 		this.queueService.add("noticeMessage", Msg, options)
 	}
+
+	public pushNoticeForCzb(Msg: string, options: any = {}) {
+		this.queueService.add("noticeForCzb", Msg, options)
+	}
 }

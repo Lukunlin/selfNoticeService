@@ -10,10 +10,9 @@ export class NoticeWecomService {
 	 * 暴露对外提供发送信息收集的接口
 	 * */
 	public pushMsg(data) {
-		// debugger
-		// if (isDev) {
-		// 	return false
-		// }
+		if (isDev) {
+			return false
+		}
 		return this.addMsg(data)
 	}
 
@@ -63,5 +62,10 @@ export class NoticeWecomService {
 		const sendMsg = data
 		const options = pages ? { pageNum: pages } : {}
 		this.noticeService.pushNoticeMsg(sendMsg, options)
+	}
+
+	public submitMsgForCzb(data: string, options = {}) {
+		const sendMsg = data
+		this.noticeService.pushNoticeForCzb(sendMsg, options)
 	}
 }

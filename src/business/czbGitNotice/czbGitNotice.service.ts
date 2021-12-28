@@ -1,10 +1,11 @@
 import { Injectable, HttpService } from "@nestjs/common"
 import { IGitlabWebHooks } from "../../../types/gitlabHook"
 import * as Moment from "moment"
+import { NoticeWecomService } from "../../basicService/noticeWecom.service"
 
 @Injectable()
 export class CzbGitNoticeService {
-	constructor(private readonly httpService: HttpService) {}
+	constructor(private readonly httpService: HttpService, private readonly noticeService: NoticeWecomService) {}
 
 	protected readonly bannerImgArray: string[] = [
 		"https://prd-1258898587.cos.ap-beijing.myqcloud.com/public/2021/12/28/13/ad6df1610475a931f0c128cc754a.jpeg",
@@ -41,7 +42,9 @@ export class CzbGitNoticeService {
 		const CommitCount = body.total_commits_count || 0
 		const CommitList = body.commits || []
 		const CommitItem = CommitList[0]
-		const CurrentDate = Moment().format("YYYY-MM-DD HH:mm:ss")
+		const CurrentDate = Moment()
+		const CurrentDateFormat = CurrentDate.format("YYYY-MM-DD HH:mm:ss")
+		const CurrentHour = CurrentDate.hours()
 		const updatedBranchSplit = (body.ref || "").split("/")
 		const updatedBranch = updatedBranchSplit[updatedBranchSplit.length - 1] || "unknow"
 		let projectChineseName = "项目"
@@ -67,7 +70,7 @@ export class CzbGitNoticeService {
 		}
 		const pushTitle = `${projectChineseName} [${ProjectName}] 收到关键分支更新提醒`
 		let pushDescription = `\n本次更新分支为: [${updatedBranch}]\n最后更新人: ${LastAuthor}`
-		pushDescription += `\n推送时间为: ${CurrentDate}`
+		pushDescription += `\n推送时间为: ${CurrentDateFormat}`
 		if (CommitItem && Object.keys(CommitItem).length) {
 			if (CommitItem.timestamp) {
 				pushDescription += `\n最后Commit更新时间: ${Moment(CommitItem.timestamp).format("YYYY-MM-DD HH:mm:ss")}`
@@ -94,6 +97,11 @@ export class CzbGitNoticeService {
 					}
 				})
 				.toPromise()
+
+			if (CurrentHour >= 9 && CurrentHour < 22) {
+				// 不半夜影响开发哥哥
+				this.noticeService.submitMsgForCzb(`【${projectChineseName}】已经收到开发哥哥的更新啦~ 其他的小哥哥小姐姐记得检查分支。有依赖的开发分支和灰度分支记得同步更新哦~~~`)
+			}
 			return true
 		} catch (err) {
 			return false
