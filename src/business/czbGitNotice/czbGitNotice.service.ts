@@ -43,11 +43,12 @@ export class CzbGitNoticeService {
 		const CommitList = body.commits || []
 		const CommitItem = CommitList[0]
 		const CurrentDate = Moment()
-		const CurrentDateFormat = CurrentDate.format("YYYY-MM-DD HH:mm:ss")
+		const CurrentDateFormat = CurrentDate.format("MM月DD日 HH:mm:ss")
 		const CurrentHour = CurrentDate.hours()
 		const updatedBranchSplit = (body.ref || "").split("/")
 		const updatedBranch = updatedBranchSplit[updatedBranchSplit.length - 1] || "unknow"
 		let projectChineseName = "项目"
+		let SubContent = "\n主线分支更新啦~"
 
 		if (Method !== "push") {
 			return false
@@ -59,27 +60,30 @@ export class CzbGitNoticeService {
 				return false
 			}
 			projectChineseName = "Saas商户平台"
+			if (updatedBranch !== "master") {
+				SubContent = "\n收到关键分支更新提醒"
+			}
 		} else if (ProjectName === "taro_micro") {
-			projectChineseName = "Saas快捷加油小程序"
+			projectChineseName = "Saas加油小程序"
 		} else if (ProjectName === "webAppService") {
-			projectChineseName = "Saas公众号H5"
+			projectChineseName = "Saas公众号"
 		} else if (ProjectName === "mp_micro") {
 			projectChineseName = "Saas商家助手小程序"
 		} else if (ProjectName === "mini_micro") {
-			projectChineseName = "流量版小程序"
+			projectChineseName = "Saas流量版小程序"
 		}
-		const pushTitle = `${projectChineseName} [${ProjectName}] 收到关键分支更新提醒`
-		let pushDescription = `\n本次更新分支为: [${updatedBranch}]\n最后更新人: ${LastAuthor}`
+		const pushTitle = `${projectChineseName}  [${ProjectName}]${SubContent}`
+		let pushDescription = `\n本次更新分支为: 【 ${updatedBranch} 】\n--------------------------------------\n最后更新人: ${LastAuthor}`
 		pushDescription += `\n推送时间为: ${CurrentDateFormat}`
+		pushDescription += `\n本次更新的commit数量为: ${CommitCount}个`
 		if (CommitItem && Object.keys(CommitItem).length) {
 			if (CommitItem.timestamp) {
-				pushDescription += `\n最后Commit更新时间: ${Moment(CommitItem.timestamp).format("YYYY-MM-DD HH:mm:ss")}`
+				pushDescription += `\n最后Commit更新时间: ${Moment(CommitItem.timestamp).format("YYYY年MM月DD日 HH:mm:ss")}`
 			}
 			if (CommitItem.message || CommitItem.title) {
-				pushDescription += `\n以下为本次最后更新的commit内容:\n${CommitItem.message || CommitItem.title}`
+				pushDescription += `\n以下为本次最后更新的commit内容:\n--------------------------------------\n${CommitItem.message || CommitItem.title}`
 			}
 		}
-		pushDescription += `\n本次更新的commit提交数量为: ${CommitCount}`
 
 		try {
 			await this.httpService
@@ -88,7 +92,7 @@ export class CzbGitNoticeService {
 					news: {
 						articles: [
 							{
-								url: `${Warehouse}/-/commit/${CommitItem.id}`,
+								url: CommitItem.url || `${Warehouse}/-/commit/${CommitItem.id}`,
 								picurl: this.getRandomImage(),
 								title: pushTitle,
 								description: pushDescription
