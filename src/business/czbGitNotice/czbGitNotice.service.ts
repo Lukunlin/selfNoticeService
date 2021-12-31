@@ -41,7 +41,7 @@ export class CzbGitNoticeService {
 		const Method = body.event_name
 		const CommitCount = body.total_commits_count || 0
 		const CommitList = body.commits || []
-		const CommitItem = CommitList[0]
+		const CommitItem = CommitList[CommitList.length - 1] || CommitList[0]
 		const CurrentDate = Moment()
 		const CurrentDateFormat = CurrentDate.format("MM月DD日 HH:mm:ss")
 		const CurrentHour = CurrentDate.hours()
