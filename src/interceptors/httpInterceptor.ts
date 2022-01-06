@@ -31,10 +31,11 @@ export class HttpInterceptor<T> implements NestInterceptor<T, IResponse<T>> {
 			/**
 			 * 记录通用统计日志
 			 */
+			const ip = header["x-forwarded-for"] || header["X-Forwarded-For"] || header.xForwardedFor || "unknow"
 			const reqAny = req as any
 			const parsedUrl = reqAny._parsedUrl || {}
 			const bodyToString = JSON.stringify(reqAny.body || {})
-			const writeContent = `Host:  ${header.host},  URL:  ${req.url},  Method:  ${req.method},  RequestId:  ${requestId},  httpVersion: ${req.httpVersion}\nuserAgent:  ${userAgent}\nparams:  ${parsedUrl.params || "{}"},  query:  ${parsedUrl.query || "{}"},  body:  ${bodyToString}`
+			const writeContent = `Host:  ${header.host},  URL:  ${req.url},  Method:  ${req.method},  RequestId:  ${requestId},  Ip: ${ip},  httpVersion: ${req.httpVersion}\nuserAgent:  ${userAgent}\nparams:  ${parsedUrl.params || "{}"},  query:  ${parsedUrl.query || "{}"},  body:  ${bodyToString}`
 			Logger.write("default", writeContent)
 			Logger.write("access", writeContent)
 		} catch (firstErr) {
