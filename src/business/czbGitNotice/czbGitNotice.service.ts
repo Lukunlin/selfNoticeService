@@ -73,10 +73,15 @@ export class CzbGitNoticeService {
 			projectChineseName = "Saas流量版小程序"
 		}
 		const pushTitle = `${projectChineseName}  [${ProjectName}]${SubContent}`
-		let pushDescription = `\n本次更新分支为: 【 ${updatedBranch} 】\n--------------------------------------\n最后更新人: ${LastAuthor}`
+		let pushDescription = `\n本次更新分支为: 【 ${updatedBranch} 】`
+		pushDescription += `\n--------------------------------------`
+		pushDescription += `\n操作人: ${LastAuthor}`
 		pushDescription += `\n推送时间为: ${CurrentDateFormat}`
 		pushDescription += `\n本次更新的commit数量为: ${CommitCount}个`
 		if (CommitItem && Object.keys(CommitItem).length) {
+			if (CommitItem.author) {
+				pushDescription += `\n最后Commit更新提交人: ${CommitItem.author.name || "unknow"}`
+			}
 			if (CommitItem.timestamp) {
 				pushDescription += `\n最后Commit更新时间: ${Moment(CommitItem.timestamp).format("YYYY年MM月DD日 HH:mm:ss")}`
 			}
@@ -101,11 +106,7 @@ export class CzbGitNoticeService {
 					}
 				})
 				.toPromise()
-
-			if (CurrentHour >= 9 && CurrentHour < 22) {
-				// 不半夜影响开发哥哥
-				this.noticeService.submitMsgForCzb(`【${projectChineseName}】已经收到开发哥哥的更新啦~ 其他的小哥哥小姐姐记得检查分支。有依赖的开发分支和灰度分支记得同步更新哦~~~`)
-			}
+			this.noticeService.submitMsgForCzb(`【${projectChineseName}】已经收到更新~\n请大家检查各自的开发分支和有依赖的相关分支进行及时的更新。`)
 			return true
 		} catch (err) {
 			return false

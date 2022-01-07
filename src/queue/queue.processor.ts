@@ -36,7 +36,7 @@ export class NoticeMsgProcessor {
 				msgtype: "text",
 				text: {
 					content: job.data || "推送消息发生错误",
-					mentioned_mobile_list: [process.env.MOBILE_NUMBER, "@all"]
+					mentioned_mobile_list: [process.env.MOBILE_NUMBER]
 				}
 			})
 			.toPromise()
