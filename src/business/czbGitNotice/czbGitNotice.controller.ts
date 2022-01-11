@@ -15,4 +15,12 @@ export class CzbGitNoticeController {
 	async pushNotice(@Body() body, @Headers() header) {
 		return this.appService.pushNewsToWecom(body)
 	}
+
+	@Post("/receiveProdNotice")
+	@ApiTags("czb项目推送服务")
+	@ApiOperation({ summary: "czb项目推送服务", description: "jenkins发布灰度和生产的通知" })
+	@HttpCode(200)
+	async receiveProdNotice(@Body() body, @Headers() header) {
+		return this.appService.pushProdNoticeToWecom(body)
+	}
 }

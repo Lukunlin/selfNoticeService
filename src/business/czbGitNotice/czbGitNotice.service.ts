@@ -112,4 +112,8 @@ export class CzbGitNoticeService {
 			return false
 		}
 	}
+
+	public async pushProdNoticeToWecom(body) {
+		return true
+	}
 }
