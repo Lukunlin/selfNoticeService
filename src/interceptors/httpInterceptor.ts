@@ -23,7 +23,7 @@ export class HttpInterceptor<T> implements NestInterceptor<T, IResponse<T>> {
 		const req = ctx.getRequest<IncomingMessage>()
 		const res = ctx.getResponse<ServerResponse>()
 		const header = req.headers
-		const userAgent = header["user-agent"] || header["User-Agent"] || header.userAgent
+		const userAgent = header["user-agent"] || header["User-Agent"]
 		const requestNowFomat = Moment().format("YYYY-MM-DD HH:mm:ss.SSS")
 		const requestId = Md5(requestNowFomat).toString()
 
@@ -31,7 +31,7 @@ export class HttpInterceptor<T> implements NestInterceptor<T, IResponse<T>> {
 			/**
 			 * 记录通用统计日志
 			 */
-			const ip = header["x-forwarded-for"] || header["X-Forwarded-For"] || header.xForwardedFor || "unknow"
+			const ip = header["x-forwarded-for"] || header["X-Forwarded-For"] || "unknow"
 			const reqAny = req as any
 			const parsedUrl = reqAny._parsedUrl || {}
 			const bodyToString = JSON.stringify(reqAny.body || {})

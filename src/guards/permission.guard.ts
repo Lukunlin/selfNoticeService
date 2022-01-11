@@ -15,7 +15,7 @@ export class checkSecretGuard implements CanActivate {
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		const request = context.switchToHttp().getRequest<IncomingMessage>()
 		const header = request.headers || {}
-		const userAgent = header["user-agent"] || header["User-Agent"] || header.userAgent
+		const userAgent = header["user-agent"] || header["User-Agent"]
 		const SECRET = header["x-gitlab-token"]
 		if (SECRET === process.env.SERVICE_SECRET) {
 			return true
