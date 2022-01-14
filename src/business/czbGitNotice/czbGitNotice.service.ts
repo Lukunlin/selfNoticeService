@@ -1,11 +1,12 @@
 import { Injectable, HttpService } from "@nestjs/common"
-import { IGitlabWebHooks } from "../../../types/gitlabHook"
+import { IGitlabWebHooks, IProdNoticeBody } from "../../../types/gitlabHook"
 import * as Moment from "moment"
 import { NoticeWecomService } from "../../basicService/noticeWecom.service"
+import { LoggerService } from "../../logger/logger.service"
 
 @Injectable()
 export class CzbGitNoticeService {
-	constructor(private readonly httpService: HttpService, private readonly noticeService: NoticeWecomService) {}
+	constructor(private readonly httpService: HttpService, private readonly noticeService: NoticeWecomService, private readonly loggerService: LoggerService) {}
 
 	protected readonly bannerImgArray: string[] = [
 		"https://prd-1258898587.cos.ap-beijing.myqcloud.com/public/2021/12/28/13/ad6df1610475a931f0c128cc754a.jpeg",
@@ -109,11 +110,65 @@ export class CzbGitNoticeService {
 			this.noticeService.submitMsgForCzb(`【${projectChineseName}】已经收到更新~\n请大家检查各自的开发分支和有依赖的相关分支进行及时的更新。`)
 			return true
 		} catch (err) {
+			this.loggerService.write("warning", err)
 			return false
 		}
 	}
 
-	public async pushProdNoticeToWecom(body) {
-		return true
+	public async pushProdNoticeToWecom(body: IProdNoticeBody) {
+		const RELEASE_CONTENT = body.job
+		if (/PRD-front-mp-deploy/i.test(RELEASE_CONTENT)) {
+			let title = ``
+			let content = ``
+			let banner = ``
+			const RELEASE_PEOPLE = RELEASE_CONTENT.split(" ")[0] || "Admin"
+			let onlineUrl = ``
+
+			content += `\n操作人： ${RELEASE_PEOPLE}`
+			content += `\n发布单号： ${body.deploy_num}`
+			content += `\n发布分支： ${body.git_branch}`
+			if (/green/i.test(RELEASE_CONTENT)) {
+				// 发布灰度
+				title = `Saas商户平台【灰度环境-绿】\n发布上线`
+				banner = `https://prd-1258898587.cos.ap-beijing.myqcloud.com/public/2022/01/14/17/3bcd27e04dacefe46cf1ff1d26ad.jpeg`
+				content += `\n\n请相关人员立即检查目前灰度环境的代码是否上线成功`
+				onlineUrl = `\nhttps://green-mp.nlsaas.com/login\n `
+			} else if (/blue/i.test(RELEASE_CONTENT)) {
+				// 发布线上
+				title = `Saas商户平台【生产环境-蓝】\n发布上线`
+				banner = `https://prd-1258898587.cos.ap-beijing.myqcloud.com/public/2022/01/14/17/2c8423e89a52b3e86a9690600b16.jpeg`
+				content += `\n\n请相关人员立刻检查目前生产环境的代码是否上线成功\n检查完毕后,大概等待30分钟后回归Master分支~`
+				onlineUrl = `\n不带灰度的域名\nhttps://blue-mp.nlsaas.com/login\n\n客户使用的域名\nhttps://mp.nlsaas.com/login\n `
+			} else {
+				return false
+			}
+
+			try {
+				await this.httpService
+					.post(this.targetUrl, {
+						msgtype: "news",
+						news: {
+							articles: [
+								{
+									title,
+									picurl: banner,
+									url: `https://docs.qq.com/sheet/DTXBVRm5GRkJXUnNN?tab=jpkgbl&_t=1637835768119`,
+									description: content
+								}
+							]
+						}
+					})
+					.toPromise()
+				let noticeSub = `最后的CommitId： ${body.commitID}\n`
+				noticeSub += `\n关于发布文档记录请点击上方卡片进入文档查看。`
+				noticeSub += `\n本次发布线上验证地址请点击下方：\n${onlineUrl}\n`
+				this.noticeService.submitMsgForCzb(noticeSub, { noticeAll: true })
+				return true
+			} catch (err) {
+				this.loggerService.write("warning", err)
+				return false
+			}
+		}
+		return false
 	}
 }

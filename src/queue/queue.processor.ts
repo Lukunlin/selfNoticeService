@@ -31,12 +31,17 @@ export class NoticeMsgProcessor {
 
 	@Process("noticeForCzb")
 	handleTranscodeToCzb(job: Job) {
+		const { noticeAll: isNoticeAll = false } = job.opts as any
+		const noticeList = [process.env.MOBILE_NUMBER]
+		if (isNoticeAll) {
+			noticeList.push("@all")
+		}
 		httpService
 			.post(this.targetCzbUrl, {
 				msgtype: "text",
 				text: {
 					content: job.data || "推送消息发生错误",
-					mentioned_mobile_list: [process.env.MOBILE_NUMBER]
+					mentioned_mobile_list: noticeList
 				}
 			})
 			.toPromise()

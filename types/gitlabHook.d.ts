@@ -56,3 +56,26 @@ export interface IGitlabWebHooks {
 		visibility_level: number
 	}
 }
+
+export interface IProdNoticeBody {
+	/*
+	 * 推送的全部消息内容
+	 * case: 唐恩萌 PRD-front-mp-deploy环境green已部署完成请留意
+	 * */
+	job: string
+	/*
+	 * 发布的单号
+	 * case: operation202201131841
+	 * */
+	deploy_num: string
+	/*
+	 * 发布的分支
+	 * case: origin/release_4.0.0
+	 * */
+	git_branch: string
+	/*
+	 * 发布的分支的最后commitId
+	 * case: fbda7c41ef6e03fea4bcfd08a8d5bee7f4c0415a
+	 * */
+	commitID: string
+}
