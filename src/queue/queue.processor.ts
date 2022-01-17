@@ -3,11 +3,10 @@ import { Process, Processor } from "@nestjs/bull"
 import { Job } from "bull"
 import * as Moment from "moment"
 
-// 获取请求实例
-const httpService = new HttpService()
-
 @Processor("noticeMsg")
 export class NoticeMsgProcessor {
+	httpService = new HttpService()
+
 	protected readonly targetUrl: string = `https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=${process.env.WECHOM_NOTICE_SELF}`
 	protected readonly targetCzbUrl: string = `https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=${process.env.WECHOM_NOTICE_DEPARTMENT}`
 
