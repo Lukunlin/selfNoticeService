@@ -17,7 +17,7 @@ export class NoticeMsgProcessor {
 		const beforeMsgHeader = `ID: ${id}${typeof pageNum === "number" ? ` (${pageNum})页` : ""} ------> ${Moment().format("YYYY/MM/DD HH:mm:ss")}\n`
 		const sendMsg = `${beforeMsgHeader}${data}`
 
-		httpService
+		this.httpService
 			.post(this.targetUrl, {
 				msgtype: "text",
 				text: {
@@ -35,7 +35,7 @@ export class NoticeMsgProcessor {
 		if (isNoticeAll) {
 			noticeList.push("@all")
 		}
-		httpService
+		this.httpService
 			.post(this.targetCzbUrl, {
 				msgtype: "text",
 				text: {
