@@ -65,12 +65,12 @@ export interface IProdNoticeBody {
 	job: string
 	/*
 	 * 发布的单号
-	 * case: operation202201131841
+	 * case: mp202203172020
 	 * */
 	deploy_num: string
 	/*
 	 * 发布的分支
-	 * case: origin/release_4.0.0
+	 * case: origin/release-20220318-bigVersion-green
 	 * */
 	git_branch: string
 	/*
@@ -78,4 +78,19 @@ export interface IProdNoticeBody {
 	 * case: fbda7c41ef6e03fea4bcfd08a8d5bee7f4c0415a
 	 * */
 	commitID: string
+}
+
+export interface IWegeTableEnvData {
+	/*
+	 * 用户验证身份的token
+	 * */
+	apiToken: string
+	/*
+	 * 维格表格的数据表字段
+	 * */
+	database: string
+	/*
+	 * 维格表格的一张表里的视图Id
+	 * */
+	viewId: string
 }

@@ -1,8 +1,17 @@
-import { Injectable, HttpService } from "@nestjs/common"
-import { IGitlabWebHooks, IProdNoticeBody } from "../../../types/gitlabHook"
+import { Injectable, HttpService, HttpException, HttpStatus } from "@nestjs/common"
+import { IGitlabWebHooks, IProdNoticeBody, IWegeTableEnvData } from "../../../types/gitlabHook"
 import * as Moment from "moment"
 import { NoticeWecomService } from "../../basicService/noticeWecom.service"
 import { LoggerService } from "../../logger/logger.service"
+
+interface IPushWeigeTableUpdated {
+	done: boolean
+	oldState: string
+	setState: string
+	projectName: string
+	isFixBug: boolean
+	commitId: string
+}
 
 @Injectable()
 export class CzbGitNoticeService {
@@ -159,7 +168,16 @@ export class CzbGitNoticeService {
 						}
 					})
 					.toPromise()
+				// 并且推送更新到维格表格的项目状态表，完成闭环
+				const updatedResult = await this.pushWeigeTableUpdated(body)
+				// 再推送一个通知到企业微信报告commitId
+				const isDoneInterface = (data): data is IPushWeigeTableUpdated => {
+					return data.isDone !== undefined
+				}
 				let noticeSub = `最后的CommitId： ${body.commitID}\n`
+				if (isDoneInterface(updatedResult)) {
+					noticeSub = `本次发布项目名称为: ${updatedResult.projectName}\n本次项目的状态更改已经同步到维格表格,从状态{${updatedResult.oldState}}更改为{${updatedResult.setState}}\n${noticeSub}`
+				}
 				noticeSub += `\n关于发布文档记录请点击上方卡片进入文档查看。`
 				noticeSub += `\n本次发布线上验证地址请点击下方：\n${onlineUrl}\n`
 				this.noticeService.submitMsgForCzb(noticeSub, { noticeAll: true })
@@ -167,6 +185,85 @@ export class CzbGitNoticeService {
 			} catch (err) {
 				this.loggerService.write("warning", err)
 				return false
+			}
+		}
+		return false
+	}
+	public async pushWeigeTableUpdated(body: IProdNoticeBody): Promise<boolean | IPushWeigeTableUpdated> {
+		// 先查询到表行记录
+		let WEGE_DATA: IWegeTableEnvData
+		try {
+			WEGE_DATA = JSON.parse(process.env.WEGE_DATA)
+		} catch (err) {
+			throw new HttpException("缺少正确的环境变量", HttpStatus.PRECONDITION_FAILED)
+		}
+		const { status: QueryOneLineStatus, data: QueryOneLineResult } = await this.httpService
+			.get(`https://api.vika.cn/fusion/v1/datasheets/${WEGE_DATA.database}/records?viewId=${WEGE_DATA.viewId}&fieldKey=id&cellFormat=string&pageNum=1&pageSize=1`, {
+				headers: {
+					Authorization: `Bearer ${WEGE_DATA.apiToken}`
+				}
+			})
+			.toPromise()
+		if (QueryOneLineStatus !== 200 || QueryOneLineResult.code !== 200) {
+			return false
+		}
+		const QueryItem = QueryOneLineResult?.data?.records[0]
+		const { fields: QueryFieldsItem = {}, recordId: RecordId } = QueryItem
+		const { flde5dnuyrir6: Release_project_name, fldK4XxBUSpb9: Release_projectForBugFix, fld4PS6m5Z2R5: BarchText, fldrjWB0T3Xac: CommitId, fldBqqaCgimt5: ProjectStateText } = QueryFieldsItem
+		const isFixBug = !Release_project_name && Release_projectForBugFix
+		// 对比最后的CommitId是否一致
+		if (CommitId.trim() !== body.commitID.trim()) {
+			return false
+		}
+		const ReallyBranch = body.git_branch.match(/(origin\/)?([\w-_]+)/)[2]
+		const isReleaseWithGreen = /green/i.test(body.job)
+		// 查看当前行记录里是否因为匹配到这个分支
+		if (BarchText.indexOf(ReallyBranch) === -1) {
+			return false
+		}
+		let setProjectState = ""
+		if (isReleaseWithGreen && ProjectStateText === "预备进行中") {
+			// 发灰度
+			setProjectState = "灰度中(机器更改状态)"
+		} else if (!isReleaseWithGreen && ProjectStateText === "灰度中") {
+			// 发生产 | 灰度放流
+			// todo,目前还没有支持生产的更新,因为在灰度过程中,后面肯定有新的灰度,不在第一条记录,后面在更新这里
+			setProjectState = "全量放流(机器更改状态)"
+			return false
+		} else {
+			return false
+		}
+		// 发起updated请求
+		const updateResultResult = await this.httpService
+			.patch(
+				`https://api.vika.cn/fusion/v1/datasheets/${WEGE_DATA.database}/records?viewId=${WEGE_DATA.viewId}&fieldKey=name`,
+				{
+					fieldKey: "id",
+					records: [
+						{
+							recordId: RecordId,
+							fields: {
+								fldBqqaCgimt5: setProjectState
+							}
+						}
+					]
+				},
+				{
+					headers: {
+						Authorization: `Bearer ${WEGE_DATA.apiToken}`,
+						"Content-Type": "application/json"
+					}
+				}
+			)
+			.toPromise()
+		if (updateResultResult.status === 200 && updateResultResult?.data?.code === 200) {
+			return {
+				done: true,
+				oldState: ProjectStateText,
+				setState: setProjectState,
+				projectName: isFixBug ? Release_projectForBugFix : Release_project_name,
+				isFixBug: isFixBug,
+				commitId: CommitId.trim()
 			}
 		}
 		return false
