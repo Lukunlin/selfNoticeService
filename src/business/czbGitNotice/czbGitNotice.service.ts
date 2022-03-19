@@ -26,6 +26,7 @@ export class CzbGitNoticeService {
 		"https://prd-1258898587.cos.ap-beijing.myqcloud.com/public/2021/12/28/13/b77368ce5a9418898ddce8a15aff.jpeg"
 	]
 	protected readonly targetUrl: string = `https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=${process.env.WECHOM_NOTICE_DEPARTMENT}`
+	protected wegeTabkleData?: IWegeTableEnvData
 
 	protected getRandomNumber(minNum: number, maxNum: number) {
 		switch (arguments.length) {
@@ -38,6 +39,18 @@ export class CzbGitNoticeService {
 			default:
 				return 0
 				break
+		}
+	}
+	protected getWegeTableData(): IWegeTableEnvData {
+		if (this.wegeTabkleData) {
+			return this.wegeTabkleData
+		} else {
+			try {
+				this.wegeTabkleData = JSON.parse(process.env.WEGE_DATA)
+				return this.wegeTabkleData
+			} catch (err) {
+				throw new HttpException("缺少正确的环境变量", HttpStatus.PRECONDITION_FAILED)
+			}
 		}
 	}
 	public getRandomImage() {
@@ -133,7 +146,7 @@ export class CzbGitNoticeService {
 			const RELEASE_PEOPLE = RELEASE_CONTENT.split(" ")[0] || "Admin"
 			let onlineUrl = ``
 
-			content += `\n操作人： ${RELEASE_PEOPLE}`
+			content += `\n关联负责人： ${RELEASE_PEOPLE}`
 			content += `\n发布单号： ${body.deploy_num}`
 			content += `\n发布分支： ${body.git_branch}`
 			if (/green/i.test(RELEASE_CONTENT)) {
@@ -176,10 +189,11 @@ export class CzbGitNoticeService {
 				}
 				let noticeSub = `最后的CommitId： ${body.commitID}\n`
 				if (isDoneInterface(updatedResult)) {
-					noticeSub = `本次发布项目有: ${updatedResult.projectName}\n\n本次项目的状态更改已经同步到维格表格,状态从{${updatedResult.oldState}}更改为{${updatedResult.setState}}\n${noticeSub}`
+					const WEGE_DATA = this.getWegeTableData()
+					noticeSub = `本次发布项目有: ${updatedResult.projectName}\n\n本次项目的状态更改已经同步到维格表格,状态从{${updatedResult.oldState}}更改为{${updatedResult.setState}}\n${noticeSub}\n维格表格的传送门:\nhttps://vika.cn/workbench/${WEGE_DATA.database}/${WEGE_DATA.viewId}\n`
 				}
 				noticeSub += `\n关于发布文档记录请点击上方卡片进入文档查看。`
-				noticeSub += `\n本次发布线上验证地址请点击下方：\n${onlineUrl}\n`
+				noticeSub += `\n本次发布线上验证地址请点击下方：${onlineUrl}\n`
 				this.noticeService.submitMsgForCzb(noticeSub, { noticeAll: true })
 				return true
 			} catch (err) {
@@ -191,12 +205,7 @@ export class CzbGitNoticeService {
 	}
 	public async pushWeigeTableUpdated(body: IProdNoticeBody): Promise<boolean | IPushWeigeTableUpdated> {
 		// 先查询到表行记录
-		let WEGE_DATA: IWegeTableEnvData
-		try {
-			WEGE_DATA = JSON.parse(process.env.WEGE_DATA)
-		} catch (err) {
-			throw new HttpException("缺少正确的环境变量", HttpStatus.PRECONDITION_FAILED)
-		}
+		const WEGE_DATA = this.getWegeTableData()
 		const { status: QueryOneLineStatus, data: QueryOneLineResult } = await this.httpService
 			.get(`https://api.vika.cn/fusion/v1/datasheets/${WEGE_DATA.database}/records?viewId=${WEGE_DATA.viewId}&fieldKey=id&cellFormat=string&pageNum=1&pageSize=1`, {
 				headers: {
