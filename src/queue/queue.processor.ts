@@ -34,7 +34,6 @@ export class NoticeMsgProcessor {
 		const noticeList = [process.env.MOBILE_NUMBER]
 		if (isNoticeAll) {
 			noticeList.push("@all")
-			noticeList.push("@所有人")
 		}
 		this.httpService
 			.post(this.targetCzbUrl, {

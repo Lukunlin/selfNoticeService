@@ -172,11 +172,11 @@ export class CzbGitNoticeService {
 				const updatedResult = await this.pushWeigeTableUpdated(body)
 				// 再推送一个通知到企业微信报告commitId
 				const isDoneInterface = (data): data is IPushWeigeTableUpdated => {
-					return data.isDone !== undefined
+					return data.done !== undefined
 				}
 				let noticeSub = `最后的CommitId： ${body.commitID}\n`
 				if (isDoneInterface(updatedResult)) {
-					noticeSub = `本次发布项目名称为: ${updatedResult.projectName}\n本次项目的状态更改已经同步到维格表格,从状态{${updatedResult.oldState}}更改为{${updatedResult.setState}}\n${noticeSub}`
+					noticeSub = `本次发布项目有: ${updatedResult.projectName}\n\n本次项目的状态更改已经同步到维格表格,状态从{${updatedResult.oldState}}更改为{${updatedResult.setState}}\n${noticeSub}`
 				}
 				noticeSub += `\n关于发布文档记录请点击上方卡片进入文档查看。`
 				noticeSub += `\n本次发布线上验证地址请点击下方：\n${onlineUrl}\n`
