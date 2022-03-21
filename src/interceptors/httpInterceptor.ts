@@ -1,4 +1,4 @@
-import { Injectable, NestInterceptor, CallHandler, ExecutionContext, RequestTimeoutException } from "@nestjs/common"
+import { Injectable, NestInterceptor, CallHandler, ExecutionContext, RequestTimeoutException, HttpException, HttpStatus } from "@nestjs/common"
 import { map, tap } from "rxjs/operators"
 import { IncomingMessage, ServerResponse } from "http"
 import { Observable, throwError, TimeoutError } from "rxjs"
@@ -62,6 +62,10 @@ export class HttpInterceptor<T> implements NestInterceptor<T, IResponse<T>> {
 			)
 			.pipe(
 				map((data): IResponse => {
+					const anyData: any = data
+					if (data instanceof Promise || data instanceof Observable) {
+						throw new HttpException("服务不应该返回一个未处理的Promise|Observable类型", HttpStatus.NOT_ACCEPTABLE)
+					}
 					/**
 					 * 处理response返回结果和格式
 					 */
@@ -69,7 +73,12 @@ export class HttpInterceptor<T> implements NestInterceptor<T, IResponse<T>> {
 						/**
 						 * 自定义特殊处理,如果拿到最终返回结果为一个函数,则直接使用函数返回值作为返回结果
 						 */
-						return data(ctx, res)
+						data = data(ctx, res)
+					} else if (anyData.headers && anyData.config) {
+						/*
+						 * 如果业务直接丢过来一个请求的响应包,则返回response的结果
+						 * */
+						data = anyData.data
 					}
 					return {
 						data,
@@ -91,7 +100,8 @@ export class HttpInterceptor<T> implements NestInterceptor<T, IResponse<T>> {
 					try {
 						resultStringify = JSON.stringify(dataResult)
 					} catch (striErr) {
-						resultStringify = "Error"
+						resultStringify = "parseError"
+						isDev && console.error(striErr)
 					}
 					const writeResult = `RequestId:  ${requestId},  useTimer: ${useTimer}ms,  ResultDate:  ${responseNowFomat}\nresponse:  ${resultStringify}`
 					if (isDev) {
