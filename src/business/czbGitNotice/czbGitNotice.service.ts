@@ -204,76 +204,113 @@ export class CzbGitNoticeService {
 		return false
 	}
 	public async pushWeigeTableUpdated(body: IProdNoticeBody): Promise<boolean | IPushWeigeTableUpdated> {
-		// 先查询到表行记录
+		// 先查询到表近期的行记录
 		const WEGE_DATA = this.getWegeTableData()
-		const { status: QueryOneLineStatus, data: QueryOneLineResult } = await this.httpService
-			.get(`https://api.vika.cn/fusion/v1/datasheets/${WEGE_DATA.database}/records?viewId=${WEGE_DATA.viewId}&fieldKey=id&cellFormat=string&pageNum=1&pageSize=1`, {
-				headers: {
-					Authorization: `Bearer ${WEGE_DATA.apiToken}`
-				}
-			})
-			.toPromise()
-		if (QueryOneLineStatus !== 200 || QueryOneLineResult.code !== 200) {
-			return false
+		const PAGE_SIZE = 20
+		const TABLE_STATE_LIST = {
+			UAT_READY: "预备进行中",
+			GREEN: "灰度中",
+			PROD: "全量放流",
+			SCRIPT_GREEN: "灰度中(机器更改状态)",
+			SCRIPT_PROD: "全量放流(机器更改状态)"
 		}
-		const QueryItem = QueryOneLineResult?.data?.records[0]
-		const { fields: QueryFieldsItem = {}, recordId: RecordId } = QueryItem
-		const { flde5dnuyrir6: Release_project_name, fldK4XxBUSpb9: Release_projectForBugFix, fld4PS6m5Z2R5: BarchText, fldrjWB0T3Xac: CommitId, fldBqqaCgimt5: ProjectStateText } = QueryFieldsItem
-		const isFixBug = !Release_project_name && Release_projectForBugFix
-		// 对比最后的CommitId是否一致
-		if (CommitId.trim() !== body.commitID.trim()) {
-			return false
-		}
-		const ReallyBranch = body.git_branch.match(/(origin\/)?([\w-_]+)/)[2]
-		const isReleaseWithGreen = /green/i.test(body.job)
-		// 查看当前行记录里是否因为匹配到这个分支
-		if (BarchText.indexOf(ReallyBranch) === -1) {
-			return false
-		}
-		let setProjectState = ""
-		if (isReleaseWithGreen && ProjectStateText === "预备进行中") {
-			// 发灰度
-			setProjectState = "灰度中(机器更改状态)"
-		} else if (!isReleaseWithGreen && ProjectStateText === "灰度中") {
-			// 发生产 | 灰度放流
-			// todo,目前还没有支持生产的更新,因为在灰度过程中,后面肯定有新的灰度,不在第一条记录,后面在更新这里
-			setProjectState = "全量放流(机器更改状态)"
-			return false
-		} else {
-			return false
-		}
-		// 发起updated请求
-		const updateResultResult = await this.httpService
-			.patch(
-				`https://api.vika.cn/fusion/v1/datasheets/${WEGE_DATA.database}/records?viewId=${WEGE_DATA.viewId}&fieldKey=name`,
-				{
-					fieldKey: "id",
-					records: [
-						{
-							recordId: RecordId,
-							fields: {
-								fldBqqaCgimt5: setProjectState
-							}
-						}
-					]
-				},
-				{
+		const CurrentDate = Moment()
+		try {
+			const { status: QueryOneLineStatus, data: QueryOneLineResult } = await this.httpService
+				.get(`https://api.vika.cn/fusion/v1/datasheets/${WEGE_DATA.database}/records?viewId=${WEGE_DATA.viewId}&fieldKey=id&cellFormat=string&pageNum=1&pageSize=${PAGE_SIZE}`, {
 					headers: {
-						Authorization: `Bearer ${WEGE_DATA.apiToken}`,
-						"Content-Type": "application/json"
+						Authorization: `Bearer ${WEGE_DATA.apiToken}`
 					}
-				}
-			)
-			.toPromise()
-		if (updateResultResult.status === 200 && updateResultResult?.data?.code === 200) {
-			return {
-				done: true,
-				oldState: ProjectStateText,
-				setState: setProjectState,
-				projectName: isFixBug ? Release_projectForBugFix : Release_project_name,
-				isFixBug: isFixBug,
-				commitId: CommitId.trim()
+				})
+				.toPromise()
+			if (QueryOneLineStatus !== 200 || QueryOneLineResult.code !== 200) {
+				return false
 			}
+			const QueryList = QueryOneLineResult?.data?.records
+			let QueryItem
+			if (QueryList.length) {
+				QueryItem = QueryList.find((listItem) => {
+					const querycommitID = listItem?.fields?.fldrjWB0T3Xac || ""
+					return querycommitID.indexOf(body.commitID) !== -1
+				})
+			}
+			if (!QueryItem) {
+				return false
+			}
+			const { fields: QueryFieldsItem = {}, recordId: RecordId } = QueryItem
+			const { flde5dnuyrir6: Release_project_name = "", fldK4XxBUSpb9: Release_projectForBugFix = "", fld4PS6m5Z2R5: BarchText = "", fldrjWB0T3Xac: CommitId = "", fldBqqaCgimt5: ProjectStateText = "", fldOzcM5HqWzK: Remark = "" } = QueryFieldsItem
+			const isFixBug = !Release_project_name && Release_projectForBugFix
+			// 对比最后的CommitId是否一致
+			if (CommitId.trim() !== body.commitID.trim()) {
+				return false
+			}
+			const ReallyBranch = body.git_branch.match(/(origin\/)?([\w-_.]+)/)[2]
+			const isReleaseWithGreen = /green/i.test(body.job)
+			// 查看当前行记录里是否因为匹配到这个分支
+			if (BarchText.indexOf(ReallyBranch) === -1) {
+				return false
+			}
+			let setProjectState = ""
+			let isSetRemark = `本次脚本修改状态时间为:【${CurrentDate.format("MM月DD日 HH:mm:ss")}】,状态从`
+			let setRowLine = {}
+			if (isReleaseWithGreen) {
+				// 发灰度
+				if (ProjectStateText === TABLE_STATE_LIST["UAT_READY"]) {
+					setProjectState = TABLE_STATE_LIST["SCRIPT_GREEN"]
+					isSetRemark += `【${TABLE_STATE_LIST["UAT_READY"]}】修改为【${setProjectState}】`
+				}
+			} else {
+				if (ProjectStateText === TABLE_STATE_LIST["UAT_READY"]) {
+					// 从预备中直接发到生产
+					setProjectState = TABLE_STATE_LIST["SCRIPT_PROD"]
+					isSetRemark += `【${TABLE_STATE_LIST["UAT_READY"]}】修改为【${setProjectState}】`
+				} else if (ProjectStateText === TABLE_STATE_LIST["GREEN"]) {
+					// 灰度放流
+					setProjectState = TABLE_STATE_LIST["SCRIPT_PROD"]
+					isSetRemark += `【${TABLE_STATE_LIST["GREEN"]}】修改为【${setProjectState}】`
+				}
+			}
+			if (!setProjectState) {
+				return false
+			}
+			if (Remark) {
+				isSetRemark = `${Remark}\n${isSetRemark}`
+			}
+			setRowLine = {
+				recordId: RecordId,
+				fields: {
+					fldBqqaCgimt5: setProjectState,
+					fldOzcM5HqWzK: isSetRemark
+				}
+			}
+			// 发起updated请求
+			const updateResultResult = await this.httpService
+				.patch(
+					`https://api.vika.cn/fusion/v1/datasheets/${WEGE_DATA.database}/records?viewId=${WEGE_DATA.viewId}&fieldKey=name`,
+					{
+						fieldKey: "id",
+						records: [setRowLine]
+					},
+					{
+						headers: {
+							Authorization: `Bearer ${WEGE_DATA.apiToken}`,
+							"Content-Type": "application/json"
+						}
+					}
+				)
+				.toPromise()
+			if (updateResultResult.status === 200 && updateResultResult?.data?.code === 200) {
+				return {
+					done: true,
+					oldState: ProjectStateText,
+					setState: setProjectState,
+					projectName: isFixBug ? Release_projectForBugFix : Release_project_name,
+					isFixBug: isFixBug,
+					commitId: CommitId.trim()
+				}
+			}
+		} catch (writeTableErr) {
+			this.loggerService.write("warning", writeTableErr)
 		}
 		return false
 	}
