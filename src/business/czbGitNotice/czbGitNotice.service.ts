@@ -11,6 +11,7 @@ interface IPushWeigeTableUpdated {
 	projectName: string
 	isFixBug: boolean
 	commitId: string
+	developers: string
 }
 
 @Injectable()
@@ -190,7 +191,7 @@ export class CzbGitNoticeService {
 				let noticeSub = `最后的CommitId： ${body.commitID}\n`
 				if (isDoneInterface(updatedResult)) {
 					const WEGE_DATA = this.getWegeTableData()
-					noticeSub = `本次发布项目有: ${updatedResult.projectName}\n\n本次项目的状态更改已经同步到维格表格,状态从{${updatedResult.oldState}}更改为{${updatedResult.setState}}\n${noticeSub}\n维格表格的传送门:\nhttps://vika.cn/workbench/${WEGE_DATA.database}/${WEGE_DATA.viewId}\n`
+					noticeSub = `${updatedResult.isFixBug ? "本次修复内容" : "本次发布项目有"}:\n${updatedResult.projectName}\n${updatedResult.developers ? `\n本次涉及开发人员有: ${updatedResult.developers}\n` : ""}\n本次项目的状态更改已经同步到维格表格,状态从{${updatedResult.oldState}}更改为{${updatedResult.setState}}\n${noticeSub}\n维格表格的传送门:\nhttps://vika.cn/workbench/${WEGE_DATA.database}/${WEGE_DATA.viewId}\n`
 				}
 				noticeSub += `\n关于发布文档记录请点击上方卡片进入文档查看。`
 				noticeSub += `\n本次发布线上验证地址请点击下方：${onlineUrl}\n`
@@ -238,7 +239,7 @@ export class CzbGitNoticeService {
 				return false
 			}
 			const { fields: QueryFieldsItem = {}, recordId: RecordId } = QueryItem
-			const { flde5dnuyrir6: Release_project_name = "", fldK4XxBUSpb9: Release_projectForBugFix = "", fld4PS6m5Z2R5: BarchText = "", fldrjWB0T3Xac: CommitId = "", fldBqqaCgimt5: ProjectStateText = "", fldOzcM5HqWzK: Remark = "" } = QueryFieldsItem
+			const { flde5dnuyrir6: Release_project_name = "", fldK4XxBUSpb9: Release_projectForBugFix = "", fld4PS6m5Z2R5: BarchText = "", fldrjWB0T3Xac: CommitId = "", fldBqqaCgimt5: ProjectStateText = "", fldD8isRN6RAw: Developer = "", fldOzcM5HqWzK: Remark = "" } = QueryFieldsItem
 			const isFixBug = !Release_project_name && Release_projectForBugFix
 			// 对比最后的CommitId是否一致
 			if (CommitId.trim() !== body.commitID.trim()) {
@@ -305,6 +306,7 @@ export class CzbGitNoticeService {
 					oldState: ProjectStateText,
 					setState: setProjectState,
 					projectName: isFixBug ? Release_projectForBugFix : Release_project_name,
+					developers: Developer,
 					isFixBug: isFixBug,
 					commitId: CommitId.trim()
 				}
