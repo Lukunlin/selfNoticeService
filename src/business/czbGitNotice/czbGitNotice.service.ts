@@ -242,7 +242,8 @@ export class CzbGitNoticeService {
 			const { flde5dnuyrir6: Release_project_name = "", fldK4XxBUSpb9: Release_projectForBugFix = "", fld4PS6m5Z2R5: BarchText = "", fldrjWB0T3Xac: CommitId = "", fldBqqaCgimt5: ProjectStateText = "", fldD8isRN6RAw: Developer = "", fldOzcM5HqWzK: Remark = "" } = QueryFieldsItem
 			const isFixBug = !Release_project_name && Release_projectForBugFix
 			// 对比最后的CommitId是否一致
-			if (CommitId.trim() !== body.commitID.trim()) {
+			const MatchBeBodyCommitRegexp = new RegExp(`\\W?${body.commitID.trim()}\\W?`)
+			if (!MatchBeBodyCommitRegexp.test(CommitId.trim())) {
 				return false
 			}
 			const ReallyBranch = body.git_branch.match(/(origin\/)?([\w-_.]+)/)[2]
