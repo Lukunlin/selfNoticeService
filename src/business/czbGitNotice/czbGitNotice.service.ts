@@ -266,7 +266,7 @@ export class CzbGitNoticeService {
 					// 从预备中直接发到生产
 					setProjectState = TABLE_STATE_LIST["SCRIPT_PROD"]
 					isSetRemark += `【${TABLE_STATE_LIST["UAT_READY"]}】修改为【${setProjectState}】`
-				} else if (ProjectStateText === TABLE_STATE_LIST["GREEN"]) {
+				} else if (ProjectStateText === TABLE_STATE_LIST["GREEN"] || ProjectStateText === TABLE_STATE_LIST["SCRIPT_GREEN"]) {
 					// 灰度放流
 					setProjectState = TABLE_STATE_LIST["SCRIPT_PROD"]
 					isSetRemark += `【${TABLE_STATE_LIST["GREEN"]}】修改为【${setProjectState}】`
