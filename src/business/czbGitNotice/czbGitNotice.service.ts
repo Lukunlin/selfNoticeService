@@ -24,12 +24,24 @@ export class CzbGitNoticeService {
 		"https://prd-1258898587.cos.ap-beijing.myqcloud.com/public/2021/12/28/13/7301481de7f3d1535afb81f2e0ae.jpeg",
 		"https://prd-1258898587.cos.ap-beijing.myqcloud.com/public/2021/12/28/13/b8cb2bf92836bc871d6a95e270ff.jpeg",
 		"https://prd-1258898587.cos.ap-beijing.myqcloud.com/public/2021/12/28/13/170329e6d7aa9ac92cb9487ea123.jpeg",
-		"https://prd-1258898587.cos.ap-beijing.myqcloud.com/public/2021/12/28/13/b77368ce5a9418898ddce8a15aff.jpeg"
+		"https://prd-1258898587.cos.ap-beijing.myqcloud.com/public/2021/12/28/13/b77368ce5a9418898ddce8a15aff.jpeg",
+		"https://prd-1258898587.cos.ap-beijing.myqcloud.com/public/2022/04/01/22/d7269f8167bbf5d04f52d2039d90.png",
+		"https://prd-1258898587.cos.ap-beijing.myqcloud.com/public/2022/04/01/22/a32b946a0b276e75dfcf08389c4b.png",
+		"https://prd-1258898587.cos.ap-beijing.myqcloud.com/public/2022/04/01/22/4d4f7f25a71ce491b0e3afbab3b0.png",
+		"https://prd-1258898587.cos.ap-beijing.myqcloud.com/public/2022/04/01/22/cd6eeb83857bdf38e3de8b659de2.png",
+		"https://prd-1258898587.cos.ap-beijing.myqcloud.com/public/2022/04/01/22/e762b36e6aeec835e263838b2b94.png",
+		"https://prd-1258898587.cos.ap-beijing.myqcloud.com/public/2022/04/01/22/09ec9425f9c96e6f89c682541fd4.png",
+		"https://prd-1258898587.cos.ap-beijing.myqcloud.com/public/2022/04/01/22/79124a55b1e2dec360f5a856e5b1.png",
+		"https://prd-1258898587.cos.ap-beijing.myqcloud.com/public/2022/04/01/22/2f6b323e19fdb9e129b1faa6c7df.jpg",
+		"https://prd-1258898587.cos.ap-beijing.myqcloud.com/public/2022/04/01/22/fb1a268c66cb502a68bde7b00462.jpeg",
+		"https://prd-1258898587.cos.ap-beijing.myqcloud.com/public/2022/04/01/22/c87daa50608d74d39ca400a89021.png",
+		"https://prd-1258898587.cos.ap-beijing.myqcloud.com/public/2022/04/01/22/2345860f2910a365f8e1e0e9be24.png",
+		"https://prd-1258898587.cos.ap-beijing.myqcloud.com/public/2022/04/01/22/7ceb997be98071a715d5d0332019.png"
 	]
 	protected readonly targetUrl: string = `https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=${process.env.WECHOM_NOTICE_DEPARTMENT}`
 	protected wegeTabkleData?: IWegeTableEnvData
 
-	protected getRandomNumber(minNum: number, maxNum: number) {
+	protected getRandomNumber(minNum: number, maxNum: number): number {
 		switch (arguments.length) {
 			case 1:
 				return parseInt(String(Math.random() * minNum + 1), 10)
