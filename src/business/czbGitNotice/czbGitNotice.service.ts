@@ -314,11 +314,21 @@ export class CzbGitNoticeService {
 				)
 				.toPromise()
 			if (updateResultResult.status === 200 && updateResultResult?.data?.code === 200) {
+				let releaseProjectNameListFormat = Release_project_name
+				if (releaseProjectNameListFormat) {
+					releaseProjectNameListFormat = releaseProjectNameListFormat
+						.split(",")
+						.filter((str) => str)
+						.map((str) => {
+							return str.trim ? `- ${str.trim()}\n` : str
+						})
+						.join("")
+				}
 				return {
 					done: true,
 					oldState: ProjectStateText,
 					setState: setProjectState,
-					projectName: isFixBug ? Release_projectForBugFix : Release_project_name,
+					projectName: isFixBug ? Release_projectForBugFix : releaseProjectNameListFormat,
 					developers: Developer,
 					isFixBug: isFixBug,
 					commitId: CommitId.trim()
