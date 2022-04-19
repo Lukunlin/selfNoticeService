@@ -2,6 +2,7 @@ import { HttpService } from "@nestjs/common"
 import { Process, Processor } from "@nestjs/bull"
 import { Job } from "bull"
 import * as Moment from "moment"
+import allowRetry from "../utils/allowRetry"
 
 @Processor("noticeMsg")
 export class NoticeMsgProcessor {
@@ -17,15 +18,21 @@ export class NoticeMsgProcessor {
 		const beforeMsgHeader = `ID: ${id}${typeof pageNum === "number" ? ` (${pageNum})页` : ""} ------> ${Moment().format("YYYY/MM/DD HH:mm:ss")}\n`
 		const sendMsg = `${beforeMsgHeader}${data}`
 
-		this.httpService
-			.post(this.targetUrl, {
-				msgtype: "text",
-				text: {
-					content: sendMsg,
-					mentioned_mobile_list: [process.env.MOBILE_NUMBER]
-				}
-			})
-			.toPromise()
+		allowRetry(
+			() => {
+				return this.httpService
+					.post(this.targetUrl, {
+						msgtype: "text",
+						text: {
+							content: sendMsg,
+							mentioned_mobile_list: [process.env.MOBILE_NUMBER]
+						}
+					})
+					.toPromise()
+			},
+			5,
+			1000
+		)
 	}
 
 	@Process("noticeForCzb")
@@ -35,14 +42,20 @@ export class NoticeMsgProcessor {
 		if (isNoticeAll) {
 			noticeList.push("@all")
 		}
-		this.httpService
-			.post(this.targetCzbUrl, {
-				msgtype: "text",
-				text: {
-					content: job.data || "推送消息发生错误",
-					mentioned_mobile_list: noticeList
-				}
-			})
-			.toPromise()
+		allowRetry(
+			() => {
+				return this.httpService
+					.post(this.targetCzbUrl, {
+						msgtype: "text",
+						text: {
+							content: job.data || "推送消息发生错误",
+							mentioned_mobile_list: noticeList
+						}
+					})
+					.toPromise()
+			},
+			5,
+			1000
+		)
 	}
 }

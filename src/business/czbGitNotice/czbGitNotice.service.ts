@@ -3,6 +3,7 @@ import { IGitlabWebHooks, IProdNoticeBody, IWegeTableEnvData } from "../../../ty
 import * as Moment from "moment"
 import { NoticeWecomService } from "../../basicService/noticeWecom.service"
 import { LoggerService } from "../../logger/logger.service"
+import allowRetry from "../../utils/allowRetry"
 
 interface IPushWeigeTableUpdated {
 	done: boolean
@@ -12,6 +13,12 @@ interface IPushWeigeTableUpdated {
 	isFixBug: boolean
 	commitId: string
 	developers: string
+}
+interface IPushNewsMsgToWecom {
+	url: string
+	picurl?: string
+	title: string
+	description: string
 }
 
 @Injectable()
@@ -65,6 +72,28 @@ export class CzbGitNoticeService {
 				throw new HttpException("缺少正确的环境变量", HttpStatus.PRECONDITION_FAILED)
 			}
 		}
+	}
+	protected pushNewsMsgToWecom(data: IPushNewsMsgToWecom, retriesLeft = 5, interval = 1000) {
+		return allowRetry(
+			() =>
+				this.httpService
+					.post(this.targetUrl, {
+						msgtype: "news",
+						news: {
+							articles: [
+								{
+									url: data.url,
+									title: data.title || this.getRandomImage(),
+									picurl: data.picurl,
+									description: data.description
+								}
+							]
+						}
+					})
+					.toPromise(),
+			retriesLeft,
+			interval
+		)
 	}
 	public getRandomImage() {
 		const randomNumber = this.getRandomNumber(0, this.bannerImgArray.length - 1)
@@ -127,21 +156,11 @@ export class CzbGitNoticeService {
 		}
 
 		try {
-			await this.httpService
-				.post(this.targetUrl, {
-					msgtype: "news",
-					news: {
-						articles: [
-							{
-								url: CommitItem.url || `${Warehouse}/-/commit/${CommitItem.id}`,
-								picurl: this.getRandomImage(),
-								title: pushTitle,
-								description: pushDescription
-							}
-						]
-					}
-				})
-				.toPromise()
+			await this.pushNewsMsgToWecom({
+				url: CommitItem.url || `${Warehouse}/-/commit/${CommitItem.id}`,
+				title: pushTitle,
+				description: pushDescription
+			})
 			this.noticeService.submitMsgForCzb(`【${projectChineseName}】已经收到更新~\n请大家检查各自的开发分支和有依赖的相关分支进行及时的更新。`)
 			return true
 		} catch (err) {
@@ -179,21 +198,12 @@ export class CzbGitNoticeService {
 			}
 
 			try {
-				await this.httpService
-					.post(this.targetUrl, {
-						msgtype: "news",
-						news: {
-							articles: [
-								{
-									title,
-									picurl: banner,
-									url: `https://docs.qq.com/sheet/DTXBVRm5GRkJXUnNN?tab=jpkgbl&_t=1637835768119`,
-									description: content
-								}
-							]
-						}
-					})
-					.toPromise()
+				await this.pushNewsMsgToWecom({
+					title,
+					picurl: banner,
+					description: content,
+					url: "https://docs.qq.com/sheet/DTXBVRm5GRkJXUnNN?tab=jpkgbl&_t=1637835768119"
+				})
 				// 并且推送更新到维格表格的项目状态表，完成闭环
 				const updatedResult = await this.pushWeigeTableUpdated(body)
 				// 再推送一个通知到企业微信报告commitId
@@ -229,13 +239,16 @@ export class CzbGitNoticeService {
 		}
 		const CurrentDate = Moment()
 		try {
-			const { status: QueryOneLineStatus, data: QueryOneLineResult } = await this.httpService
-				.get(`https://api.vika.cn/fusion/v1/datasheets/${WEGE_DATA.database}/records?viewId=${WEGE_DATA.viewId}&fieldKey=id&cellFormat=string&pageNum=1&pageSize=${PAGE_SIZE}`, {
-					headers: {
-						Authorization: `Bearer ${WEGE_DATA.apiToken}`
-					}
-				})
-				.toPromise()
+			const RPC_QueryProjectState = () => {
+				return this.httpService
+					.get(`https://api.vika.cn/fusion/v1/datasheets/${WEGE_DATA.database}/records?viewId=${WEGE_DATA.viewId}&fieldKey=id&cellFormat=string&pageNum=1&pageSize=${PAGE_SIZE}`, {
+						headers: {
+							Authorization: `Bearer ${WEGE_DATA.apiToken}`
+						}
+					})
+					.toPromise()
+			}
+			const { status: QueryOneLineStatus, data: QueryOneLineResult } = await allowRetry(RPC_QueryProjectState, 5, 300)
 			if (QueryOneLineStatus !== 200 || QueryOneLineResult.code !== 200) {
 				return false
 			}
@@ -298,21 +311,24 @@ export class CzbGitNoticeService {
 				}
 			}
 			// 发起updated请求
-			const updateResultResult = await this.httpService
-				.patch(
-					`https://api.vika.cn/fusion/v1/datasheets/${WEGE_DATA.database}/records?viewId=${WEGE_DATA.viewId}&fieldKey=name`,
-					{
-						fieldKey: "id",
-						records: [setRowLine]
-					},
-					{
-						headers: {
-							Authorization: `Bearer ${WEGE_DATA.apiToken}`,
-							"Content-Type": "application/json"
+			const RPC_UpdateProjectState = () => {
+				return this.httpService
+					.patch(
+						`https://api.vika.cn/fusion/v1/datasheets/${WEGE_DATA.database}/records?viewId=${WEGE_DATA.viewId}&fieldKey=name`,
+						{
+							fieldKey: "id",
+							records: [setRowLine]
+						},
+						{
+							headers: {
+								Authorization: `Bearer ${WEGE_DATA.apiToken}`,
+								"Content-Type": "application/json"
+							}
 						}
-					}
-				)
-				.toPromise()
+					)
+					.toPromise()
+			}
+			const updateResultResult = await allowRetry(RPC_UpdateProjectState, 3, 200)
 			if (updateResultResult.status === 200 && updateResultResult?.data?.code === 200) {
 				let releaseProjectNameListFormat = Release_project_name
 				if (releaseProjectNameListFormat) {
