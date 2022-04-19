@@ -211,13 +211,31 @@ export class CzbGitNoticeService {
 					return data.done !== undefined
 				}
 				let noticeSub = `最后的CommitId： ${body.commitID}\n`
+				let noticeMembers: string[] = []
 				if (isDoneInterface(updatedResult)) {
 					const WEGE_DATA = this.getWegeTableData()
 					noticeSub = `${updatedResult.isFixBug ? "本次修复内容" : "本次发布项目有"}:\n${updatedResult.projectName}\n${updatedResult.developers ? `\n本次涉及开发人员有: ${updatedResult.developers}\n` : ""}\n本次项目的状态更改已经同步到维格表格,状态从{${updatedResult.oldState}}更改为{${updatedResult.setState}}\n${noticeSub}\n维格表格的传送门:\nhttps://vika.cn/workbench/${WEGE_DATA.database}/${WEGE_DATA.viewId}\n`
+					try {
+						// 拿到相关开发人员做通知
+						noticeMembers = updatedResult.developers
+							? updatedResult.developers
+									.split(",")
+									.map((e) => {
+										return e.trim ? e.trim() : ""
+									})
+									.filter((e) => e)
+							: []
+					} catch (mErr) {
+						this.loggerService.write("warning", mErr)
+					}
 				}
 				noticeSub += `\n关于发布文档记录请点击上方卡片进入文档查看。`
 				noticeSub += `\n本次发布线上验证地址请点击下方：${onlineUrl}\n`
-				this.noticeService.submitMsgForCzb(noticeSub, { noticeAll: true })
+				const submitMsgForCzb_Option: { noticeAll: boolean; noticeMember?: string[] } = { noticeAll: true }
+				if (noticeMembers && noticeMembers.length) {
+					submitMsgForCzb_Option.noticeMember = noticeMembers
+				}
+				this.noticeService.submitMsgForCzb(noticeSub, submitMsgForCzb_Option)
 				return true
 			} catch (err) {
 				this.loggerService.write("warning", err)

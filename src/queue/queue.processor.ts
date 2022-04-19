@@ -36,21 +36,36 @@ export class NoticeMsgProcessor {
 	}
 
 	@Process("noticeForCzb")
-	handleTranscodeToCzb(job: Job) {
-		const { noticeAll: isNoticeAll = false } = job.opts as any
+	async handleTranscodeToCzb(job: Job) {
+		const JobOptions = job.opts as { noticeAll: boolean; noticeMember?: string[] }
+		const { noticeAll: isNoticeAll = false } = JobOptions
 		const noticeList = [process.env.MOBILE_NUMBER]
 		if (isNoticeAll) {
 			noticeList.push("@all")
+		}
+		const SendData: { content: string; mentioned_list?: string[]; mentioned_mobile_list: string[] } = {
+			content: job.data || "推送消息发生错误",
+			mentioned_mobile_list: noticeList
+		}
+		if (JobOptions.noticeMember && JobOptions.noticeMember.length && process.env.SAAS_MEMBER_QUERY_SERVICE) {
+			let noticeMemberIds: string[] = []
+			try {
+				const targetQueryUrl = decodeURIComponent(process.env.SAAS_MEMBER_QUERY_SERVICE)
+				const queryMemberResult = await this.httpService.get(targetQueryUrl, { params: { names: JobOptions.noticeMember.join(",") } }).toPromise()
+				if (queryMemberResult.data) {
+					noticeMemberIds = queryMemberResult.data.split("|").filter((e) => e && e !== "@all" && e !== "f-1388018372420088742")
+					SendData.mentioned_list = noticeMemberIds
+				}
+			} catch (err) {
+				// 错误了就不查询了
+			}
 		}
 		allowRetry(
 			() => {
 				return this.httpService
 					.post(this.targetCzbUrl, {
 						msgtype: "text",
-						text: {
-							content: job.data || "推送消息发生错误",
-							mentioned_mobile_list: noticeList
-						}
+						text: SendData
 					})
 					.toPromise()
 			},
