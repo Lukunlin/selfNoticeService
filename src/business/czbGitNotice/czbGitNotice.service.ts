@@ -83,8 +83,8 @@ export class CzbGitNoticeService {
 							articles: [
 								{
 									url: data.url,
-									title: data.title || this.getRandomImage(),
-									picurl: data.picurl,
+									title: data.title,
+									picurl: data.picurl || this.getRandomImage(),
 									description: data.description
 								}
 							]
@@ -198,6 +198,7 @@ export class CzbGitNoticeService {
 			}
 
 			try {
+				// 先推送一张卡片
 				await this.pushNewsMsgToWecom({
 					title,
 					picurl: banner,
