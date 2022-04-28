@@ -14,7 +14,8 @@ export class NoticeMsgProcessor {
 	@Process("noticeMessage")
 	handleTranscode(job: Job) {
 		const { id, data } = job
-		const pageNum = (<any>(job.opts || {})).pageNum
+		const options = <any>(job.opts || {})
+		const pageNum = options.pageNum
 		const beforeMsgHeader = `ID: ${id}${typeof pageNum === "number" ? ` (${pageNum})页` : ""} ------> ${Moment().format("YYYY/MM/DD HH:mm:ss")}\n`
 		const sendMsg = `${beforeMsgHeader}${data}`
 

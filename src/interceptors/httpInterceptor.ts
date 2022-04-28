@@ -61,24 +61,25 @@ export class HttpInterceptor<T> implements NestInterceptor<T, IResponse<T>> {
 				})
 			)
 			.pipe(
-				map((data): IResponse => {
-					const anyData: any = data
+				map((data: any): IResponse => {
 					if (data instanceof Promise || data instanceof Observable) {
 						throw new HttpException("服务不应该返回一个未处理的Promise|Observable类型", HttpStatus.NOT_ACCEPTABLE)
 					}
 					/**
 					 * 处理response返回结果和格式
 					 */
-					if (typeof data === "function") {
+					if (data === undefined) {
+						data = null
+					} else if (typeof data === "function") {
 						/**
 						 * 自定义特殊处理,如果拿到最终返回结果为一个函数,则直接使用函数返回值作为返回结果
 						 */
 						data = data(ctx, res)
-					} else if (anyData.headers && anyData.config) {
+					} else if (data.headers && data.config) {
 						/*
 						 * 如果业务直接丢过来一个请求的响应包,则返回response的结果
 						 * */
-						data = anyData.data
+						data = data.data
 					}
 					return {
 						data,
