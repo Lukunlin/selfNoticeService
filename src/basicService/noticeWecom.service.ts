@@ -64,8 +64,11 @@ export class NoticeWecomService {
 		this.noticeService.pushNoticeMsg(sendMsg, options)
 	}
 
+	public submitMsgForMe(data: string, options = {}) {
+		return this.noticeService.pushNoticeMsg(data, options)
+	}
+
 	public submitMsgForCzb(data: string, options = {}) {
-		const sendMsg = data
-		this.noticeService.pushNoticeForCzb(sendMsg, options)
+		return this.noticeService.pushNoticeForCzb(data, options)
 	}
 }

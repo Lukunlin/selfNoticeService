@@ -7,8 +7,9 @@ import { QueueModule } from "../queue/queue.module"
 
 // 其他业务的注册
 import { CzbGitNoticeModule } from "../business/czbGitNotice/czbGitNotice.module"
+import { SelfNoticeModule } from "../business/selfNotice/selfNotice.module"
 // 公用和业务模块
-const businessModules = [CzbGitNoticeModule]
+const businessModules = [CzbGitNoticeModule, SelfNoticeModule]
 
 @Module({
 	imports: [
