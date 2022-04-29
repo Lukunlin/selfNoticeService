@@ -171,7 +171,8 @@ export class CzbGitNoticeService {
 
 	public async pushProdNoticeToWecom(body: IProdNoticeBody) {
 		const RELEASE_CONTENT = body.job
-		if (/PRD-front-mp-deploy/i.test(RELEASE_CONTENT)) {
+		const ClientName = /PRD-front-mp-deploy/i.test(RELEASE_CONTENT) ? "Saas商户平台" : /PRD-front-webappservice-deploy/i.test(RELEASE_CONTENT) ? "微信公众号H5" : ""
+		if (ClientName) {
 			let title = ``
 			let content = ``
 			let banner = ``
