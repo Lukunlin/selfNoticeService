@@ -184,13 +184,13 @@ export class CzbGitNoticeService {
 			content += `\n发布分支： ${body.git_branch}`
 			if (/green/i.test(RELEASE_CONTENT)) {
 				// 发布灰度
-				title = `Saas商户平台【灰度环境-绿】\n发布上线`
+				title = `${ClientName}【灰度环境-绿】\n发布上线`
 				banner = `https://prd-1258898587.cos.ap-beijing.myqcloud.com/public/2022/01/14/17/3bcd27e04dacefe46cf1ff1d26ad.jpeg`
 				content += `\n\n请相关人员立即检查目前灰度环境的代码是否上线成功`
 				onlineUrl = `\nhttps://green-mp.nlsaas.com/login\n `
 			} else if (/blue/i.test(RELEASE_CONTENT)) {
 				// 发布线上
-				title = `Saas商户平台【生产环境-蓝】\n发布上线`
+				title = `${ClientName}【生产环境-蓝】\n发布上线`
 				banner = `https://prd-1258898587.cos.ap-beijing.myqcloud.com/public/2022/01/14/17/2c8423e89a52b3e86a9690600b16.jpeg`
 				content += `\n\n请相关人员立刻检查目前生产环境的代码是否上线成功\n检查完毕后,大概等待30分钟后回归Master分支~`
 				onlineUrl = `\n不带灰度的域名\nhttps://blue-mp.nlsaas.com/login\n\n客户使用的域名\nhttps://mp.nlsaas.com/login\n `
