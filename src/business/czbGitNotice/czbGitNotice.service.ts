@@ -93,7 +93,7 @@ export class CzbGitNoticeService {
 		},
 		webAppService: {
 			name: "Saas公众号H5",
-			mainFile: ["README.md", ".browserslistrc", ".editorconfig", ".env.production", ".gitignore", "babel.config.js", "package.json", "tsconfig.json", "vue.config.js", "public/index.html", "src/App.vue", "src/main.ts", "src/permission.ts", "src/vant.ts", "src/utils/request.ts", "src/utils/native.ts", "src/types/index.d.ts", "src/store/index.ts", "src/router/index.ts", "src/components/special/keepAlive.vue", "src/common/index.ts"]
+			mainFile: ["README.md", ".browserslistrc", ".editorconfig", ".env.production", ".gitignore", "babel.config.js", "package.json", "tsconfig.json", "vue.config.js", "public/index.html", "src/App.vue", "src/main.ts", "src/permission.ts", "src/vant.ts", "src/utils/request.ts", "src/utils/native.ts", "src/types/index.d.ts", "src/store/index.ts", "src/components/special/keepAlive.vue", "src/common/index.ts"]
 		},
 		mp_micro: {
 			name: "Saas商家助手小程序",
