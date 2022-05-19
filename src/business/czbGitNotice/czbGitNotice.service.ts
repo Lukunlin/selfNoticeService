@@ -1,5 +1,5 @@
 import { Injectable, HttpService, HttpException, HttpStatus } from "@nestjs/common"
-import { IGitlabWebHooks, IProdNoticeBody, IWegeTableEnvData } from "../../../types/gitlabHook"
+import { IGitlabWebHooks, IProdNoticeBody, IWegeTableEnvData, IGitlabHookCommits } from "../../../types/gitlabHook"
 import * as Moment from "moment"
 import { NoticeWecomService } from "../../basicService/noticeWecom.service"
 import { LoggerService } from "../../logger/logger.service"
@@ -19,6 +19,12 @@ interface IPushNewsMsgToWecom {
 	picurl?: string
 	title: string
 	description: string
+}
+interface IProjectInfo {
+	[type: string]: {
+		name: string
+		mainFile: string[]
+	}
 }
 
 @Injectable()
@@ -45,6 +51,59 @@ export class CzbGitNoticeService {
 		"https://prd-1258898587.cos.ap-beijing.myqcloud.com/public/2022/04/01/22/2345860f2910a365f8e1e0e9be24.png",
 		"https://prd-1258898587.cos.ap-beijing.myqcloud.com/public/2022/04/01/22/7ceb997be98071a715d5d0332019.png"
 	]
+	protected readonly projectInfo: IProjectInfo = {
+		mp: {
+			name: "Saas商户平台",
+			mainFile: ["README.md", "babel.config.js", "jsconfig.json", "package.json", "postcss.config.js", "vue.config.js", ".browserslistrc", "editorconfig", ".eslintrc.js", ".gitignore", "public/index.html", "src/common/common.js", "src/utils/request.js", "src/utils/common.js", "src/App.vue", "src/main.js", "src/permission.js", "src/store.js"]
+		},
+		taro_micro: {
+			name: "Saas加油小程序",
+			mainFile: [
+				"README.md",
+				".editorconfig",
+				".eslintrc",
+				".nvmrc",
+				".prettierignore",
+				".prettierrc",
+				"app.js",
+				"ext.json",
+				"global.d.ts",
+				"package.json",
+				"project.config.json",
+				"run.sh",
+				"sitemap.json",
+				"tsconfig.json",
+				"types/taro-shim.d.ts",
+				"config/alipayApiGen.js",
+				"config/buildExtJson.js",
+				"config/buildPlugin.js",
+				"config/dev.js",
+				"config/index.js",
+				"config/pageMetaPlugin.js",
+				"config/prod.js",
+				"src/utils/user.ts",
+				"src/utils/service.ts",
+				"src/utils/hooks.ts",
+				"src/taroComponent/Button/get-phone-number-button/index.tsx",
+				"src/taroComponent/Button/getUserInfo/index.tsx",
+				"src/taroComponent/loadingBlock/index.tsx",
+				"src/systemConfig/config.js",
+				"src/plugins/polyfillWxToTaro.ts"
+			]
+		},
+		webAppService: {
+			name: "Saas公众号H5",
+			mainFile: ["README.md", ".browserslistrc", ".editorconfig", ".env.production", ".gitignore", "babel.config.js", "package.json", "tsconfig.json", "vue.config.js", "public/index.html", "src/App.vue", "src/main.ts", "src/permission.ts", "src/vant.ts", "src/utils/request.ts", "src/utils/native.ts", "src/types/index.d.ts", "src/store/index.ts", "src/router/index.ts", "src/components/special/keepAlive.vue", "src/common/index.ts"]
+		},
+		mp_micro: {
+			name: "Saas商家助手小程序",
+			mainFile: ["README.md", ".editorconfig", ".gitignore", "package.json", "tsconfig.json", "app.js", "babel.config.js", "postcss.config.js", "run.sh", "vue.config.js", "src/App.vue", "src/main.js", "src/pages.js", "src/utils/service.js", "src/utils/utils.js", "src/store/index.js"]
+		},
+		mini_micro: {
+			name: "Saas流量版小程序",
+			mainFile: ["README.md", ".editorconfig", ".eslintrc", ".gitignore", "package.json", "tsconfig.json", "run.sh", ".prettierrc", ".npmrc", "app.js", "babel.config.js", "global.d.ts", "project.config.json", "config/buildPlugin.js", "config/dev.js", "config/index.js", "config/prod.js", "config/mockConfig.js", "src/app.tsx", "src/utils/service.ts", "src/utils/user.ts", "src/systemConfig/config.ts"]
+		}
+	}
 	protected readonly targetUrl: string = `https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=${process.env.WECHOM_NOTICE_DEPARTMENT}`
 	protected wegeTabkleData?: IWegeTableEnvData
 
@@ -60,6 +119,23 @@ export class CzbGitNoticeService {
 				return 0
 				break
 		}
+	}
+	protected checkHaveMainFiles(commitList: IGitlabHookCommits[], projectType: string): string[] {
+		const FilterList = this.projectInfo[projectType].mainFile
+		let tipsFileList: string[] = []
+		const pushSet: Set<string> = new Set()
+		commitList.forEach((cItem) => {
+			const modified = cItem.modified || []
+			modified.forEach((filePath) => {
+				if (FilterList.includes(filePath)) {
+					pushSet.add(filePath)
+				}
+			})
+		})
+		if (pushSet.size) {
+			tipsFileList = [...pushSet]
+		}
+		return tipsFileList
 	}
 	protected getWegeTableData(): IWegeTableEnvData {
 		if (this.wegeTabkleData) {
@@ -112,8 +188,10 @@ export class CzbGitNoticeService {
 		const CurrentHour = CurrentDate.hours()
 		const updatedBranchSplit = (body.ref || "").split("/")
 		const updatedBranch = updatedBranchSplit[updatedBranchSplit.length - 1] || "unknow"
-		let projectChineseName = "项目"
-		let SubContent = "\n主线分支更新啦~"
+		const projectChineseName = this.projectInfo[ProjectName].name || "未知项目"
+		const IsMaster = updatedBranch === "master"
+		const SubContent = IsMaster ? "\n主线分支更新啦~" : "\n收到关键分支更新提醒"
+		let notPush = false
 
 		if (Method !== "push") {
 			return false
@@ -121,21 +199,34 @@ export class CzbGitNoticeService {
 		if (ProjectName === "mp") {
 			const MainBranchArrs = (process.env.SAAS_MP_MAIN_BRANCH || "master").split(",")
 			if (!MainBranchArrs.includes(updatedBranch)) {
-				// 不在白名单的分支不推送
-				return false
+				// Mp不在白名单的分支不推送
+				notPush = true
 			}
-			projectChineseName = "Saas商户平台"
-			if (updatedBranch !== "master") {
-				SubContent = "\n收到关键分支更新提醒"
+		}
+		const haveMainFiles = this.checkHaveMainFiles(CommitList, ProjectName)
+		if (haveMainFiles.length) {
+			// 如果查找到有重新的文件更新,则另外发起通知
+			if (!IsMaster) {
+				// 非master的话告知开发者们要注意和check
+				let pushHavaMainFileChangeNoticeText = `【${projectChineseName}】项目发现了重要文件在开发分支上被更新\n`
+				pushHavaMainFileChangeNoticeText += `\n提交者: ${LastAuthor}`
+				pushHavaMainFileChangeNoticeText += `\n开发分支: ${updatedBranch}`
+				pushHavaMainFileChangeNoticeText += `\n以下是重要分支的修改文件: (`
+				haveMainFiles.forEach((filePath) => {
+					pushHavaMainFileChangeNoticeText += `\n                ${filePath}`
+				})
+				const noticeDevelop = LastAuthor.split("（")[0]
+				this.noticeService.submitMsgForCzb(`${pushHavaMainFileChangeNoticeText}\n\)`, {
+					noticeMember: [noticeDevelop]
+				})
 			}
-		} else if (ProjectName === "taro_micro") {
-			projectChineseName = "Saas加油小程序"
-		} else if (ProjectName === "webAppService") {
-			projectChineseName = "Saas公众号"
-		} else if (ProjectName === "mp_micro") {
-			projectChineseName = "Saas商家助手小程序"
-		} else if (ProjectName === "mini_micro") {
-			projectChineseName = "Saas流量版小程序"
+		}
+		if (ProjectName !== "mp" && !IsMaster) {
+			// 除了Mp项目其他的就不推了
+			notPush = true
+		}
+		if (notPush) {
+			return false
 		}
 		const pushTitle = `${projectChineseName}  [${ProjectName}]${SubContent}`
 		let pushDescription = `\n本次更新分支为: 【 ${updatedBranch} 】`

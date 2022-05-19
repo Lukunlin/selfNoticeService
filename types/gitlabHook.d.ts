@@ -1,3 +1,17 @@
+export interface IGitlabHookCommits {
+	id: string
+	message: string
+	title: string
+	timestamp: string
+	url: string
+	author: {
+		name: string
+		email: string
+	}
+	added: string[]
+	modified: string[]
+	removed: string[]
+}
 export interface IGitlabWebHooks {
 	object_kind: string
 	event_name: string
@@ -30,20 +44,7 @@ export interface IGitlabWebHooks {
 		ssh_url: string
 		http_url: string
 	}
-	commits: Array<{
-		id: string
-		message: string
-		title: string
-		timestamp: string
-		url: string
-		author: {
-			name: string
-			email: string
-		}
-		added: string[]
-		modified: string[]
-		removed: string[]
-	}>
+	commits: IGitlabHookCommits[]
 	total_commits_count: number
 	push_options: any
 	repository: {
