@@ -1,8 +1,9 @@
-import { Controller, Post, Body, HttpCode } from "@nestjs/common"
+import { Controller, Get, Post, Body, HttpCode, Query, HttpException, HttpStatus } from "@nestjs/common"
 import { ApiTags, ApiOperation, ApiParam, ApiBody } from "@nestjs/swagger"
 import { SelfNoticeService } from "./selfNotice.service"
 import { Type } from "class-transformer"
 import { IsNumber, IsString, Length, IsOptional } from "class-validator"
+import * as Moment from "moment"
 
 class DtoWhisperNotice {
 	@IsString()
@@ -22,6 +23,9 @@ class DtoWhisperNotice {
 	@Length(3, 20, { message: "微信号需要在3-20个字符以内" })
 	wechat?: string
 }
+class DtoGetMySsr {
+	passwd: string
+}
 
 @Controller("/selfNotice")
 export class SelfNoticeController {
@@ -38,5 +42,25 @@ export class SelfNoticeController {
 	@HttpCode(200)
 	async whisperNotice(@Body() body: DtoWhisperNotice) {
 		return await this.appService.whisperNotice(body)
+	}
+
+	@Get("/getSsr")
+	@ApiTags("通过订阅获取我的SSR链接")
+	@ApiOperation({ summary: "自己的工具箱", description: "通过接口可随时获取自己的SSR链接" })
+	@ApiParam({ name: "passwd" })
+	@ApiBody({ type: DtoGetMySsr, description: "该接口已废弃,请访问最新的订阅链接" })
+	@HttpCode(200)
+	async getMySsr(@Query("passwd") passwd) {
+		if (passwd && passwd.length === 8) {
+			const Password = passwd.slice(0, 6)
+			const SubPasswd = passwd.slice(6, 8).split("").reverse().join("")
+			const Hour = Moment().hour()
+			const HourStr = Hour > 9 ? String(Hour) : `0${Hour}`
+			const currentHour = HourStr.split("").reverse().join("")
+			if (Password === process.env.SELF_SSR_PASSWD && SubPasswd === currentHour) {
+				return await this.appService.getSsrUrl()
+			}
+		}
+		throw new HttpException("该接口已废弃,请访问最新的订阅链接", HttpStatus.EXPECTATION_FAILED)
 	}
 }
