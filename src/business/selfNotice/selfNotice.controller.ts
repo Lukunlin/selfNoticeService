@@ -63,4 +63,15 @@ export class SelfNoticeController {
 		}
 		throw new HttpException("该接口已废弃,请访问最新的订阅链接", HttpStatus.EXPECTATION_FAILED)
 	}
+
+	@Get("/getAccount")
+	@ApiTags("防止在外忘记密码,直接按类型获取部分密码")
+	@ApiOperation({ summary: "自己的工具箱", description: "直接按类型获取部分密码" })
+	@HttpCode(200)
+	getAccount(@Query("type") type) {
+		if (type === "maomi") {
+			return "bbkg ::: kjfdsrew56"
+		}
+		return false
+	}
 }
