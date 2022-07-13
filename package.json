@@ -12,6 +12,7 @@
         "dev:prod": "nest build && node dist/main.js",
         "build": "nest build",
         "release": "nest build && pm2 start --name selfNoticeService dist/main.js",
+        "releaseCluster": "nest build && pm2 start pm2Start.config.js",
         "prebuild": "rimraf dist",
         "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
         "lint": "eslint \"{src,apps,libs,test,utils,common}/**/*.{js,jsx,ts,tsx,less,css}\" --fix",
