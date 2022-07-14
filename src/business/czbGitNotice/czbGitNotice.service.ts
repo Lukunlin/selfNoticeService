@@ -4,6 +4,7 @@ import * as Moment from "moment"
 import { NoticeWecomService } from "../../basicService/noticeWecom.service"
 import { LoggerService } from "../../logger/logger.service"
 import allowRetry from "../../utils/allowRetry"
+import { stringify } from "querystring"
 
 interface IPushWeigeTableUpdated {
 	done: boolean
@@ -26,10 +27,91 @@ interface IProjectInfo {
 		mainFile: string[]
 	}
 }
+interface IWeigeTableParam {
+	/**
+	 * （选填）视图ID。默认为维格表中第一个视图。请求会返回视图中经过视图中筛选/排序后的结果，可以搭配使用fields参数过滤不需要的字段数据
+	 */
+	viewId?: string
+	/**
+	 * （选填）指定分页的页码，默认为 1，与参数pageSize配合使用。
+	 */
+	pageNum?: number
+	/**
+	 * （选填）指定每页返回的记录总数，默认为100。此参数只接受1-1000的整数。
+	 */
+	pageSize?: number
+	/**
+	 * （选填）指定 field 的查询和返回的 key。默认使用列名  'name' 。指定为 'id' 时将以 fieldId 作为查询和返回方式（使用 id 可以避免列名的修改导致代码失效问题）
+	 */
+	fieldKey?: "id" | "name"
+	/**
+	 * （选填）单元格值类型，默认为 'json'，指定为 'string' 时所有值都将被自动转换为 string 格式。
+	 */
+	cellFormat?: "json" | "string"
+	/**
+	 * （选填）限制返回记录的总数量。如果该值小于表中实际的记录总数，则返回的记录总数会被限制为该值。
+	 */
+	maxRecords?: number
+	/**
+	 * （选填）使用公式作为筛选条件，返回匹配的记录，访问 https://vika.cn/help/tutorial-getting-started-with-formulas/ 了解公式使用方式
+	 */
+	filterByFormula?: string
+	/**
+	 * （选填）指定要返回的字段（默认为字段名, 也可以通过 fieldKey 指定为字段 Id）。如果附带此参数，则返回的记录合集将会被过滤，只有指定的字段会返回。
+	 *  @case ['标题', '详情', '引用次数']
+	 */
+	fields?: string[]
+	/**
+	 * （选填）recordIds 数组。如果附带此参数，则返回参数中指定的records数组。 返回值按照传入数组的顺序排序。此时无视筛选、排序。无分页，每次最多查询 1000 条
+	 *  @case ['recordId1', 'recordId2']
+	 */
+	recordIds?: string[]
+	/**
+	 * （选填）对返回的记录进行排序。sort 是由多个排序对象 (sort object) 组成的数组。单个排序对象的结构为 {"order":"asc 或 desc", "field":"字段名称或字段 ID"}。查询示例：sort[][field]=客户名称&sort[][order]=asc，即按照「客户名称」列的字母升序来排列返回的记录。如果 sort 与 viewId 同时使用，则 sort 指定的排序条件将会覆盖视图里的排序条件。
+	 *  @case [{ field: 'field1', order: 'desc' }]
+	 */
+	sort?: { field: string; order: string }[]
+}
+interface IWeigeTableRecords {
+	recordId: string
+	createdAt?: number
+	updatedAt?: number
+	fields: {
+		[key: number | string]: any
+	}
+}
+interface IWeigeTableResult {
+	total: number
+	pageNum: number
+	pageSize: number
+	records: IWeigeTableRecords[]
+}
+interface IWeigeTableResponse {
+	status: number
+	data: {
+		code: number
+		message: string
+		success: boolean
+		data: IWeigeTableResult
+	}
+}
+interface IWeigeTableUpdateRecords {
+	recordId: string
+	fields: {
+		[key: number | string]: any
+	}
+}
+interface IWeigeTableUpdateParams {
+	fieldKey?: "id" | "name"
+	records: IWeigeTableUpdateRecords[]
+}
 
 @Injectable()
 export class CzbGitNoticeService {
-	constructor(private readonly httpService: HttpService, private readonly noticeService: NoticeWecomService, private readonly loggerService: LoggerService) {}
+	constructor(private readonly httpService: HttpService, private readonly noticeService: NoticeWecomService, private readonly loggerService: LoggerService) {
+		this.wegeTabkleData = this.getWegeTableData()
+		this.wegeTabkleUrl = `https://api.vika.cn/fusion/v1/datasheets/${this.wegeTabkleData.database}/records?viewId=${this.wegeTabkleData.viewId}`
+	}
 
 	protected readonly bannerImgArray: string[] = [
 		"https://prd-1258898587.cos.ap-beijing.myqcloud.com/public/2021/12/28/13/ad6df1610475a931f0c128cc754a.jpeg",
@@ -106,6 +188,7 @@ export class CzbGitNoticeService {
 	}
 	protected readonly targetUrl: string = `https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=${process.env.WECHOM_NOTICE_DEPARTMENT}`
 	protected wegeTabkleData?: IWegeTableEnvData
+	protected wegeTabkleUrl?: string = ""
 
 	protected getRandomNumber(minNum: number, maxNum: number): number {
 		switch (arguments.length) {
@@ -337,10 +420,60 @@ export class CzbGitNoticeService {
 		}
 		return false
 	}
-	public async pushWeigeTableUpdated(body: IProdNoticeBody): Promise<boolean | IPushWeigeTableUpdated> {
+	protected async weigetQuery(options: IWeigeTableParam = {}): Promise<false | IWeigeTableRecords[]> {
+		const defaultOpts: IWeigeTableParam = {
+			fieldKey: "id",
+			cellFormat: "string",
+			pageNum: 1,
+			pageSize: 50
+		}
+		const joinKey = stringify(Object.assign(defaultOpts, options) as any, "&", "=")
+		const URL = `${this.wegeTabkleUrl}&${joinKey}`
+		const RPC_QueryProjectState = () => {
+			return this.httpService
+				.get(URL, {
+					headers: {
+						Authorization: `Bearer ${this.wegeTabkleData.apiToken}`
+					}
+				})
+				.toPromise()
+		}
+		try {
+			const queryRespose = await allowRetry<IWeigeTableResponse>(RPC_QueryProjectState, 5, 300)
+			const { status: QueryOneLineStatus, data: QueryOneLineResult } = queryRespose
+			if (QueryOneLineStatus !== 200 || QueryOneLineResult.code !== 200) {
+				return false
+			}
+			const QueryList = QueryOneLineResult?.data?.records
+			return QueryList
+		} catch (err) {
+			this.loggerService.write("error", err)
+			return false
+		}
+	}
+	protected async weigetUpdate(setData: IWeigeTableUpdateParams): Promise<boolean> {
+		const URL = `${this.wegeTabkleUrl}&fieldKey=name`
+		const RPC_UpdateProjectState = () => {
+			return this.httpService
+				.patch(URL, setData, {
+					headers: {
+						Authorization: `Bearer ${this.wegeTabkleData.apiToken}`,
+						"Content-Type": "application/json"
+					}
+				})
+				.toPromise()
+		}
+		try {
+			const updateResultResult = await allowRetry<{ status: number; data: { code: number; message: string; success: boolean; data: Pick<IWeigeTableResult, "records"> } }>(RPC_UpdateProjectState, 3, 200)
+			return updateResultResult.status === 200 && updateResultResult?.data?.code === 200
+		} catch (err) {
+			this.loggerService.write("warning", err)
+		}
+		return false
+	}
+	// 根据内容查询和更新维格表格
+	protected async pushWeigeTableUpdated(body: IProdNoticeBody): Promise<boolean | IPushWeigeTableUpdated> {
 		// 先查询到表近期的行记录
-		const WEGE_DATA = this.getWegeTableData()
-		const PAGE_SIZE = 20
 		const TABLE_STATE_LIST = {
 			UAT_READY: "预备进行中",
 			GREEN: "灰度中",
@@ -350,21 +483,11 @@ export class CzbGitNoticeService {
 		}
 		const CurrentDate = Moment()
 		try {
-			const RPC_QueryProjectState = () => {
-				return this.httpService
-					.get(`https://api.vika.cn/fusion/v1/datasheets/${WEGE_DATA.database}/records?viewId=${WEGE_DATA.viewId}&fieldKey=id&cellFormat=string&pageNum=1&pageSize=${PAGE_SIZE}`, {
-						headers: {
-							Authorization: `Bearer ${WEGE_DATA.apiToken}`
-						}
-					})
-					.toPromise()
-			}
-			const { status: QueryOneLineStatus, data: QueryOneLineResult } = await allowRetry(RPC_QueryProjectState, 5, 300)
-			if (QueryOneLineStatus !== 200 || QueryOneLineResult.code !== 200) {
+			const QueryList = await this.weigetQuery()
+			if (!QueryList) {
 				return false
 			}
-			const QueryList = QueryOneLineResult?.data?.records
-			let QueryItem
+			let QueryItem: IWeigeTableRecords | undefined
 			if (QueryList.length) {
 				QueryItem = QueryList.find((listItem) => {
 					const querycommitID = listItem?.fields?.fldrjWB0T3Xac || ""
@@ -377,11 +500,6 @@ export class CzbGitNoticeService {
 			const { fields: QueryFieldsItem = {}, recordId: RecordId } = QueryItem
 			const { flde5dnuyrir6: Release_project_name = "", fldK4XxBUSpb9: Release_projectForBugFix = "", fld4PS6m5Z2R5: BarchText = "", fldrjWB0T3Xac: CommitId = "", fldBqqaCgimt5: ProjectStateText = "", fldD8isRN6RAw: Developer = "", fldOzcM5HqWzK: Remark = "" } = QueryFieldsItem
 			const isFixBug = !Release_project_name && Release_projectForBugFix
-			// 对比最后的CommitId是否一致
-			const MatchBeBodyCommitRegexp = new RegExp(`\\W?${body.commitID.trim()}\\W?`)
-			if (!MatchBeBodyCommitRegexp.test(CommitId.trim())) {
-				return false
-			}
 			const ReallyBranch = body.git_branch.match(/(origin\/)?([\w-_.]+)/)[2]
 			const isReleaseWithGreen = /green/i.test(body.job)
 			// 查看当前行记录里是否因为匹配到这个分支
@@ -389,8 +507,8 @@ export class CzbGitNoticeService {
 				return false
 			}
 			let setProjectState = ""
-			let isSetRemark = `本次脚本修改状态时间为:【${CurrentDate.format("MM月DD日 HH:mm:ss")}】,状态从`
-			let setRowLine = {}
+			let isSetRemark = `本次脚本修改状态时间为:【${CurrentDate.format("MM月DD日(星期E) HH:mm:ss")}】,状态从`
+
 			if (isReleaseWithGreen) {
 				// 发灰度
 				if (ProjectStateText === TABLE_STATE_LIST["UAT_READY"]) {
@@ -414,7 +532,7 @@ export class CzbGitNoticeService {
 			if (Remark) {
 				isSetRemark = `${Remark}\n${isSetRemark}`
 			}
-			setRowLine = {
+			const setRowLine: IWeigeTableUpdateRecords = {
 				recordId: RecordId,
 				fields: {
 					fldBqqaCgimt5: setProjectState,
@@ -422,25 +540,11 @@ export class CzbGitNoticeService {
 				}
 			}
 			// 发起updated请求
-			const RPC_UpdateProjectState = () => {
-				return this.httpService
-					.patch(
-						`https://api.vika.cn/fusion/v1/datasheets/${WEGE_DATA.database}/records?viewId=${WEGE_DATA.viewId}&fieldKey=name`,
-						{
-							fieldKey: "id",
-							records: [setRowLine]
-						},
-						{
-							headers: {
-								Authorization: `Bearer ${WEGE_DATA.apiToken}`,
-								"Content-Type": "application/json"
-							}
-						}
-					)
-					.toPromise()
-			}
-			const updateResultResult = await allowRetry(RPC_UpdateProjectState, 3, 200)
-			if (updateResultResult.status === 200 && updateResultResult?.data?.code === 200) {
+			const updateResultResult = await this.weigetUpdate({
+				fieldKey: "id",
+				records: [setRowLine]
+			})
+			if (updateResultResult) {
 				let releaseProjectNameListFormat = Release_project_name
 				if (releaseProjectNameListFormat) {
 					releaseProjectNameListFormat = releaseProjectNameListFormat
