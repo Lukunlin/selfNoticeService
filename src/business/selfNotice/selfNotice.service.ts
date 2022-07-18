@@ -1,6 +1,5 @@
 import { Injectable, HttpService, HttpException, HttpStatus } from "@nestjs/common"
 import { NoticeWecomService } from "../../basicService/noticeWecom.service"
-import allowRetry from "../../utils/allowRetry"
 
 @Injectable()
 export class SelfNoticeService {
@@ -34,6 +33,7 @@ export class SelfNoticeService {
 			const { data: OriginContent } = await this.httpService.get(src).toPromise()
 			if (typeof OriginContent === "string") {
 				const OriginBuffer64 = Buffer.from(OriginContent, "base64")
+				this.noticeService.submitMsgForMe(`高级服务"getSsrUrl"被调用`)
 				return OriginBuffer64.toString()
 			}
 		} catch (err) {
