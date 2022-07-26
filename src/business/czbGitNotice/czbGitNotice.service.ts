@@ -342,6 +342,9 @@ export class CzbGitNoticeService {
 			return false
 		}
 	}
+	public async pushMicroExamineToWecom(body: any) {
+		return false
+	}
 
 	public async pushProdNoticeToWecom(body: IProdNoticeBody) {
 		const RELEASE_CONTENT = body.job
