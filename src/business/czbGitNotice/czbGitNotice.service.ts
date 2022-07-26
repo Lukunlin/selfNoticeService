@@ -343,6 +343,8 @@ export class CzbGitNoticeService {
 		}
 	}
 	public async pushMicroExamineToWecom(body: any) {
+		this.noticeService.submitMsgForMe(`"pushMicroExamineToWecom"服务被调用 body为`)
+		this.noticeService.submitMsgForMe(JSON.stringify(body))
 		return false
 	}
 
