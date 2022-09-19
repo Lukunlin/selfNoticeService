@@ -11,9 +11,13 @@ interface IPushWeigeTableUpdated {
 	oldState: string
 	setState: string
 	projectName: string
+	fixRemark: string
 	isFixBug: boolean
+	isUpdated: boolean
+	isBatchBlue: boolean
 	commitId: string
 	developers: string
+	IdentificationList: any[]
 }
 interface IPushNewsMsgToWecom {
 	url: string
@@ -395,7 +399,18 @@ export class CzbGitNoticeService {
 				let noticeMembers: string[] = []
 				if (isDoneInterface(updatedResult)) {
 					const WEGE_DATA = this.getWegeTableData()
-					noticeSub = `${updatedResult.isFixBug ? "本次修复内容" : "本次发布项目有"}:\n${updatedResult.projectName}\n${updatedResult.developers ? `\n本次涉及开发人员有: ${updatedResult.developers}\n` : ""}\n本次项目的状态更改已经同步到维格表格,状态从{${updatedResult.oldState}}更改为{${updatedResult.setState}}\n${noticeSub}\n维格表格的传送门:\nhttps://vika.cn/workbench/${WEGE_DATA.database}/${WEGE_DATA.viewId}\n`
+					noticeSub = ""
+					if (updatedResult.projectName) {
+						noticeSub += `本次发布项目有:\n${updatedResult.projectName}\n`
+					}
+					if (updatedResult.fixRemark) {
+						const fixMsgTitle = updatedResult.projectName ? "本次发布顺风车修复内容" : "本次修复内容"
+						noticeSub += `${fixMsgTitle}: \n${updatedResult.fixRemark}`
+					}
+					if (updatedResult.developers) {
+						noticeSub += `\n本次涉及开发人员有: \n${updatedResult.developers}\n`
+					}
+					noticeSub += `\n本次项目的状态更改已经同步到维格表格,状态从 {${updatedResult.oldState || "无状态"}} ---> {${updatedResult.setState}\n维格表格的传送门:\nhttps://vika.cn/workbench/${WEGE_DATA.database}/${WEGE_DATA.viewId}\n`
 					try {
 						// 拿到相关开发人员做通知
 						noticeMembers = updatedResult.developers
@@ -416,7 +431,9 @@ export class CzbGitNoticeService {
 				if (noticeMembers && noticeMembers.length) {
 					submitMsgForCzb_Option.noticeMember = noticeMembers
 				}
+				// 推送本次更新的内容
 				this.noticeService.submitMsgForCzb(noticeSub, submitMsgForCzb_Option)
+
 				return true
 			} catch (err) {
 				this.loggerService.write("warning", err)
@@ -492,21 +509,26 @@ export class CzbGitNoticeService {
 			if (!QueryList) {
 				return false
 			}
+			let QueryIndex = -1
 			let QueryItem: IWeigeTableRecords | undefined
 			if (QueryList.length) {
-				QueryItem = QueryList.find((listItem) => {
+				QueryIndex = QueryList.findIndex((listItem) => {
 					const querycommitID = listItem?.fields?.fldrjWB0T3Xac || ""
 					return querycommitID.indexOf(body.commitID) !== -1
 				})
+				QueryItem = QueryList[QueryIndex]
 			}
 			if (!QueryItem) {
 				return false
 			}
 			const { fields: QueryFieldsItem = {}, recordId: RecordId } = QueryItem
-			const { flde5dnuyrir6: Release_project_name = "", fldK4XxBUSpb9: Release_projectForBugFix = "", fld4PS6m5Z2R5: BarchText = "", fldrjWB0T3Xac: CommitId = "", fldBqqaCgimt5: ProjectStateText = "", fldD8isRN6RAw: Developer = "", fldOzcM5HqWzK: Remark = "" } = QueryFieldsItem
-			const isFixBug = !Release_project_name && Release_projectForBugFix
+			const { flde5dnuyrir6: Release_project_name = "", fldK4XxBUSpb9: Release_projectForBugFix = "", fld4PS6m5Z2R5: BarchText = "", fldrjWB0T3Xac: CommitId = "", fldBqqaCgimt5: ProjectStateText = "", fldD8isRN6RAw: Developer = "", fldOzcM5HqWzK: Remark = "", fldlgzJWRBBDk: Identification = "" } = QueryFieldsItem
+			const isFixBug = Release_projectForBugFix
 			const ReallyBranch = body.git_branch.match(/(origin\/)?([\w-_.]+)/)[2]
 			const isReleaseWithGreen = /green/i.test(body.job)
+			let isUpdated = false
+			let isBatchBlue = false
+			let sameBatchs = []
 			// 查看当前行记录里是否因为匹配到这个分支
 			if (BarchText.indexOf(ReallyBranch) === -1) {
 				return false
@@ -516,19 +538,26 @@ export class CzbGitNoticeService {
 
 			if (isReleaseWithGreen) {
 				// 发灰度
-				if (ProjectStateText === TABLE_STATE_LIST["UAT_READY"]) {
+				if (ProjectStateText === "" || ProjectStateText === TABLE_STATE_LIST["UAT_READY"]) {
+					isUpdated = true
 					setProjectState = TABLE_STATE_LIST["SCRIPT_GREEN"]
-					isSetRemark += `【${TABLE_STATE_LIST["UAT_READY"]}】修改为【${setProjectState}】`
+					const originState = ProjectStateText === "" ? "无状态" : TABLE_STATE_LIST["UAT_READY"]
+					isSetRemark += `【${originState}】修改为【${setProjectState}】`
 				}
 			} else {
-				if (ProjectStateText === TABLE_STATE_LIST["UAT_READY"]) {
+				isUpdated = true
+				if (ProjectStateText === "" || ProjectStateText === TABLE_STATE_LIST["UAT_READY"]) {
 					// 从预备中直接发到生产
 					setProjectState = TABLE_STATE_LIST["SCRIPT_PROD"]
-					isSetRemark += `【${TABLE_STATE_LIST["UAT_READY"]}】修改为【${setProjectState}】`
+					const originState = ProjectStateText === "" ? "无状态" : TABLE_STATE_LIST["UAT_READY"]
+					isSetRemark += `【${originState}】修改为【${setProjectState}】`
 				} else if (ProjectStateText === TABLE_STATE_LIST["GREEN"] || ProjectStateText === TABLE_STATE_LIST["SCRIPT_GREEN"]) {
 					// 灰度放流
+					isBatchBlue = true
 					setProjectState = TABLE_STATE_LIST["SCRIPT_PROD"]
 					isSetRemark += `【${TABLE_STATE_LIST["GREEN"]}】修改为【${setProjectState}】`
+				} else {
+					isUpdated = false
 				}
 			}
 			if (!setProjectState) {
@@ -556,16 +585,44 @@ export class CzbGitNoticeService {
 						.split(",")
 						.filter((str) => str)
 						.map((str) => {
-							return str.trim ? `- ${str.trim()}\n` : str
+							return str.trim ? `【${str.trim()}】、` : str
 						})
 						.join("")
+					releaseProjectNameListFormat = releaseProjectNameListFormat.slice(0, -1)
+					releaseProjectNameListFormat = releaseProjectNameListFormat + "\n\n"
+				}
+				let releaseForBugFix = Release_projectForBugFix
+				if (releaseForBugFix) {
+					releaseForBugFix = releaseForBugFix
+						.split("\n")
+						.map((eLine) => `- ${eLine}\n`)
+						.join("")
+				}
+				if (isBatchBlue && Identification) {
+					//  如果是放流的话,把列表里同一批的全部返回 sameBatchs
+					const copyList = QueryList.slice(QueryIndex)
+					const temporaryArr = []
+					copyList.findIndex((cItem) => {
+						if (cItem.fields.fldlgzJWRBBDk === Identification) {
+							temporaryArr.push(cItem.fields)
+						} else {
+							if (temporaryArr.length) {
+								sameBatchs = temporaryArr
+							}
+							return true
+						}
+					})
 				}
 				return {
 					done: true,
 					oldState: ProjectStateText,
 					setState: setProjectState,
-					projectName: isFixBug ? Release_projectForBugFix : releaseProjectNameListFormat,
+					projectName: releaseProjectNameListFormat,
+					fixRemark: releaseForBugFix,
 					developers: Developer,
+					isUpdated,
+					isBatchBlue,
+					IdentificationList: sameBatchs,
 					isFixBug: isFixBug,
 					commitId: CommitId.trim()
 				}
