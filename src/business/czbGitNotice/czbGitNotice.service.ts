@@ -458,7 +458,7 @@ export class CzbGitNoticeService {
 
                                             > ### 项目第一版本发布时间： \`<font color=Orange>${FirstLine.fld7R1Iu2zFt6}</font>\`
 
-                                            > 本次版本标识符号为: {{ <font color=Red size=26>${FirstLine.fldlgzJWRBBDk}</font> }}
+                                            > 本次版本标识符号为: {{ <font color=Red size=26>**${FirstLine.fldlgzJWRBBDk}**</font> }}
 
 
                                             ##### <font color=Blue>请在线上再次验证完毕后 ,把相关客户端合并回 \`Master\`， 届时会重新收到 Master更新的服务通知</font>
