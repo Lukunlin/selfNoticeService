@@ -13,4 +13,8 @@ export class NoticeService {
 	public pushNoticeForCzb(Msg: string, options: any = {}) {
 		this.queueService.add("noticeForCzb", Msg, options)
 	}
+
+	public pushMarkdownForCzb(markdownContent: string, options: any = {}) {
+		this.queueService.add("markdownForCzb", markdownContent, options)
+	}
 }

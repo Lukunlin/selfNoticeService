@@ -71,4 +71,8 @@ export class NoticeWecomService {
 	public submitMsgForCzb(data: string, options = {}) {
 		return this.noticeService.pushNoticeForCzb(data, options)
 	}
+
+	public submitMarkdownForCzb(data: string, options = {}) {
+		return this.noticeService.pushMarkdownForCzb(data, options)
+	}
 }

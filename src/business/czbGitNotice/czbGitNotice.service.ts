@@ -110,6 +110,16 @@ interface IWeigeTableUpdateParams {
 	records: IWeigeTableUpdateRecords[]
 }
 
+enum EWeekEnum {
+	日,
+	一,
+	二,
+	三,
+	四,
+	五,
+	六
+}
+
 @Injectable()
 export class CzbGitNoticeService {
 	constructor(private readonly httpService: HttpService, private readonly noticeService: NoticeWecomService, private readonly loggerService: LoggerService) {
@@ -355,6 +365,7 @@ export class CzbGitNoticeService {
 	public async pushProdNoticeToWecom(body: IProdNoticeBody) {
 		const RELEASE_CONTENT = body.job
 		const ClientName = /PRD-front-mp-deploy/i.test(RELEASE_CONTENT) ? "Saas商户平台" : /PRD-front-webappservice-deploy/i.test(RELEASE_CONTENT) ? "微信公众号H5" : ""
+		const nowDate = Moment()
 		if (ClientName) {
 			let title = ``
 			let content = ``
@@ -433,6 +444,30 @@ export class CzbGitNoticeService {
 				}
 				// 推送本次更新的内容
 				this.noticeService.submitMsgForCzb(noticeSub, submitMsgForCzb_Option)
+				// 放流则再推送一个放流的版本统计
+				if (isDoneInterface(updatedResult)) {
+					if (updatedResult.isBatchBlue) {
+						const vikaList = updatedResult.IdentificationList.reverse()
+						const WEEK_VALUE = EWeekEnum[nowDate.days()]
+						const DATE_FORMAT = nowDate.format(`YYYY年MM月DD号 星期${WEEK_VALUE} HH:mm:ss`)
+						const FirstLine = vikaList[0] || {}
+						const MARKDOWN = `# <font color=Red>能链Saas</font> <font color=Blue size=30>版本全量放流</font> 通知服务
+                                            > ### 放流时间： \`${DATE_FORMAT}\`
+
+                                            > ### 项目灰度开始日期： \`<font color=Green>${FirstLine.fldGUSH9ZdTWm}</font>\`
+
+                                            > ### 项目第一版本发布时间： \`<font color=Orange>${FirstLine.fld7R1Iu2zFt6}</font>\`
+
+                                            > 本次版本标识符号为: {{ <font color=Red size=26>${FirstLine.fldlgzJWRBBDk}</font> }}
+
+
+                                            ##### <font color=Blue>请在线上再次验证完毕后 ,把相关客户端合并回 \`Master\`， 届时会重新收到 Master更新的服务通知</font>
+                                        `
+						setTimeout(() => {
+							this.noticeService.submitMarkdownForCzb(MARKDOWN)
+						}, 15000)
+					}
+				}
 
 				return true
 			} catch (err) {

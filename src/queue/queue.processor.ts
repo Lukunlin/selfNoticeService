@@ -74,4 +74,25 @@ export class NoticeMsgProcessor {
 			1000
 		)
 	}
+
+	@Process("markdownForCzb")
+	handlePushNoticeMarkdownToCzb(job: Job) {
+		const { id, data } = job
+		const options = <any>(job.opts || {})
+
+		allowRetry(
+			() => {
+				return this.httpService
+					.post(this.targetCzbUrl, {
+						msgtype: "markdown",
+						markdown: {
+							content: data
+						}
+					})
+					.toPromise()
+			},
+			5,
+			1000
+		)
+	}
 }
