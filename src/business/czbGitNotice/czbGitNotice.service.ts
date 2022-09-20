@@ -569,7 +569,7 @@ export class CzbGitNoticeService {
 				return false
 			}
 			let setProjectState = ""
-			let isSetRemark = `本次脚本修改状态时间为:【${CurrentDate.format("MM月DD日(星期E) HH:mm:ss")}】,状态从`
+			let isSetRemark = `本次脚本修改状态时间为:【${CurrentDate.format(`MM月DD日(星期${EWeekEnum[CurrentDate.days()]}) HH:mm:ss`)}】,状态从`
 
 			if (isReleaseWithGreen) {
 				// 发灰度
