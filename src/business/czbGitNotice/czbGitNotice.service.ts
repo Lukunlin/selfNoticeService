@@ -167,6 +167,8 @@ export class CzbGitNoticeService {
 				"package.json",
 				"project.config.json",
 				"run.sh",
+				"helpme.sh",
+				"bootstrap.js",
 				"sitemap.json",
 				"tsconfig.json",
 				"types/taro-shim.d.ts",
