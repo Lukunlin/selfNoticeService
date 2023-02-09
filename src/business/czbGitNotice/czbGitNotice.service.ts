@@ -453,6 +453,23 @@ export class CzbGitNoticeService {
 						const WEEK_VALUE = EWeekEnum[nowDate.days()]
 						const DATE_FORMAT = nowDate.format(`YYYY年MM月DD号 星期${WEEK_VALUE} HH:mm:ss`)
 						const FirstLine = vikaList[0] || {}
+						const SET_RELEASE_PROJECT = new Set()
+						const SET_FIXBUG_PROJECT = new Set()
+						vikaList.forEach((item) => {
+							if (item.flde5dnuyrir6) {
+								item.flde5dnuyrir6.split(",").forEach((pText) => {
+									SET_RELEASE_PROJECT.add(pText.trim ? pText.trim() : pText)
+								})
+							}
+							if (item.fldK4XxBUSpb9) {
+								item.fldK4XxBUSpb9.split(",").forEach((bText) => {
+									SET_FIXBUG_PROJECT.add(bText.trim ? bText.trim() : bText)
+								})
+							}
+						})
+						const RELEASE_PROJECT_ALL_TEXT = [...SET_RELEASE_PROJECT].map((t) => `--->  ${t}`).join(`\r\n`)
+						const RELEASE_FIXBUG_ALL_TEXT = [...SET_FIXBUG_PROJECT].map((t) => `--->  ${t}`).join("\r\n")
+						const RELEASE_FIXBUG_ALL_CONTENT = RELEASE_FIXBUG_ALL_TEXT ? `\r\n> 本次顺风车的内容有 {${SET_FIXBUG_PROJECT.size}}个： \r\n${RELEASE_FIXBUG_ALL_TEXT}\r\n` : ""
 						const MARKDOWN = `# <font color=Red>能链Saas</font> <font color=Blue size=30>版本全量放流</font> 通知服务
                                             > ### 放流时间： \`${DATE_FORMAT}\`
 
@@ -462,12 +479,14 @@ export class CzbGitNoticeService {
 
                                             > 本次版本标识符号为: {{ <font color=Red size=26>**${FirstLine.fldlgzJWRBBDk}**</font> }}
 
+                                            > 本次全部上线的项目有 {${SET_RELEASE_PROJECT.size}} 个： \r\n${RELEASE_PROJECT_ALL_TEXT}
+                                            ${RELEASE_FIXBUG_ALL_CONTENT}
 
                                             ##### <font color=Blue>请在线上再次验证完毕后 ,把相关客户端合并回 \`Master\`， 届时会重新收到 Master更新的服务通知</font>
                                         `
 						setTimeout(() => {
 							this.noticeService.submitMarkdownForCzb(MARKDOWN)
-						}, 15000)
+						}, 8000)
 					}
 				}
 
