@@ -406,7 +406,11 @@ export class CzbGitNoticeService {
 				const updatedResult = await this.pushWeigeTableUpdated(body)
 				// 再推送一个通知到企业微信报告commitId
 				const isDoneInterface = (data): data is IPushWeigeTableUpdated => {
-					return data && data.done
+					if (data && data.done) {
+						return true
+					}
+					this.loggerService.write("warning", `查询到更新vika表格后拿到数据不正确 ::: \r\n${JSON.stringify(data)}`)
+					return false
 				}
 				let noticeSub = `最后的CommitId： ${body.commitID}\n`
 				let noticeMembers: string[] = []
