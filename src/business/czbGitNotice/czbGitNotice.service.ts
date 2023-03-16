@@ -404,6 +404,7 @@ export class CzbGitNoticeService {
 				})
 				// 并且推送更新到维格表格的项目状态表，完成闭环
 				const updatedResult = await this.pushWeigeTableUpdated(body)
+				return updatedResult
 				// 再推送一个通知到企业微信报告commitId
 				const isDoneInterface = (data): data is IPushWeigeTableUpdated => {
 					if (data && data.done) {
