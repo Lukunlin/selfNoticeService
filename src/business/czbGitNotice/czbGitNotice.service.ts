@@ -189,7 +189,7 @@ export class CzbGitNoticeService {
 				"src/plugins/polyfillWxToTaro.ts"
 			]
 		},
-		webAppService: {
+		webappservice: {
 			name: "Saas公众号H5",
 			mainFile: ["README.md", ".browserslistrc", ".editorconfig", ".env.production", ".gitignore", "babel.config.js", "package.json", "tsconfig.json", "vue.config.js", "public/index.html", "src/App.vue", "src/main.ts", "src/permission.ts", "src/vant.ts", "src/utils/request.ts", "src/utils/native.ts", "src/types/index.d.ts", "src/store/index.ts", "src/components/special/keepAlive.vue", "src/common/index.ts"]
 		},
@@ -287,7 +287,7 @@ export class CzbGitNoticeService {
 		const CurrentHour = CurrentDate.hours()
 		const updatedBranchSplit = (body.ref || "").split("/")
 		const updatedBranch = updatedBranchSplit[updatedBranchSplit.length - 1] || "unknow"
-		const projectChineseName = this.projectInfo[ProjectName].name || "未知项目"
+		const projectChineseName = (this.projectInfo[typeof ProjectName === "string" ? ProjectName.toLocaleLowerCase() : "unknow"] || {}).name || "未知项目"
 		const IsMaster = updatedBranch === "master"
 		const SubContent = IsMaster ? "\n主线分支更新啦~" : "\n收到关键分支更新提醒"
 		let notPush = false
