@@ -29,6 +29,7 @@ interface IProjectInfo {
 	[type: string]: {
 		name: string
 		mainFile: string[]
+		Maintainer: string
 	}
 }
 interface IWeigeTableParam {
@@ -150,7 +151,8 @@ export class CzbGitNoticeService {
 	protected readonly projectInfo: IProjectInfo = {
 		mp: {
 			name: "Saas商户平台",
-			mainFile: ["README.md", "babel.config.js", "jsconfig.json", "package.json", "postcss.config.js", "vue.config.js", ".browserslistrc", "editorconfig", ".eslintrc.js", ".gitignore", "public/index.html", "src/common/common.js", "src/utils/request.js", "src/utils/common.js", "src/App.vue", "src/main.js", "src/permission.js", "src/store.js"]
+			mainFile: ["README.md", "babel.config.js", "jsconfig.json", "package.json", "postcss.config.js", "vue.config.js", ".browserslistrc", "editorconfig", ".eslintrc.js", ".gitignore", "public/index.html", "src/common/common.js", "src/utils/request.js", "src/utils/common.js", "src/App.vue", "src/main.js", "src/permission.js", "src/store.js"],
+			Maintainer: "杨志勇"
 		},
 		taro_micro: {
 			name: "Saas加油小程序",
@@ -187,19 +189,33 @@ export class CzbGitNoticeService {
 				"src/taroComponent/loadingBlock/index.tsx",
 				"src/systemConfig/config.js",
 				"src/plugins/polyfillWxToTaro.ts"
-			]
+			],
+			Maintainer: "Colin"
 		},
 		webappservice: {
 			name: "Saas公众号H5",
-			mainFile: ["README.md", ".browserslistrc", ".editorconfig", ".env.production", ".gitignore", "babel.config.js", "package.json", "tsconfig.json", "vue.config.js", "public/index.html", "src/App.vue", "src/main.ts", "src/permission.ts", "src/vant.ts", "src/utils/request.ts", "src/utils/native.ts", "src/types/index.d.ts", "src/store/index.ts", "src/components/special/keepAlive.vue", "src/common/index.ts"]
+			mainFile: ["README.md", ".browserslistrc", ".editorconfig", ".env.production", ".gitignore", "babel.config.js", "package.json", "tsconfig.json", "vue.config.js", "public/index.html", "src/App.vue", "src/main.ts", "src/permission.ts", "src/vant.ts", "src/utils/request.ts", "src/utils/native.ts", "src/types/index.d.ts", "src/store/index.ts", "src/components/special/keepAlive.vue", "src/common/index.ts"],
+			Maintainer: "黄星华"
 		},
 		mp_micro: {
 			name: "Saas商家助手小程序",
-			mainFile: ["README.md", ".editorconfig", ".gitignore", "package.json", "tsconfig.json", "app.js", "babel.config.js", "postcss.config.js", "run.sh", "vue.config.js", "src/App.vue", "src/main.js", "src/pages.js", "src/utils/service.js", "src/utils/utils.js", "src/store/index.js"]
+			mainFile: ["README.md", ".editorconfig", ".gitignore", "package.json", "tsconfig.json", "app.js", "babel.config.js", "postcss.config.js", "run.sh", "vue.config.js", "src/App.vue", "src/main.js", "src/pages.js", "src/utils/service.js", "src/utils/utils.js", "src/store/index.js"],
+			Maintainer: "霍松锋"
 		},
 		mini_micro: {
 			name: "Saas流量版小程序",
-			mainFile: ["README.md", ".editorconfig", ".eslintrc", ".gitignore", "package.json", "tsconfig.json", "run.sh", ".prettierrc", ".npmrc", "app.js", "babel.config.js", "global.d.ts", "project.config.json", "config/buildPlugin.js", "config/dev.js", "config/index.js", "config/prod.js", "config/mockConfig.js", "src/app.tsx", "src/utils/service.ts", "src/utils/user.ts", "src/systemConfig/config.ts"]
+			mainFile: ["README.md", ".editorconfig", ".eslintrc", ".gitignore", "package.json", "tsconfig.json", "run.sh", ".prettierrc", ".npmrc", "app.js", "babel.config.js", "global.d.ts", "project.config.json", "config/buildPlugin.js", "config/dev.js", "config/index.js", "config/prod.js", "config/mockConfig.js", "src/app.tsx", "src/utils/service.ts", "src/utils/user.ts", "src/systemConfig/config.ts"],
+			Maintainer: "Colin"
+		},
+		"star-cloud-link": {
+			name: "星云链CRM",
+			mainFile: ["src/main.ts", "vite.config.ts", "src/app.vue", "utils/request.ts", "utils/service.ts", "utils/common.ts", "types/global.d.ts"],
+			Maintainer: "张威"
+		},
+		"starCloudLink-micro": {
+			name: "星云链小程序",
+			mainFile: ["run.sh", "babel.config.js", "package.json", "src/app.tsx", "src/app.config.ts", "src/utils/common.ts", "src/api/service/interceptors.ts", "src/api/service/index.ts"],
+			Maintainer: "朱秋影"
 		}
 	}
 	protected readonly targetUrl: string = `https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=${process.env.WECHOM_NOTICE_DEPARTMENT}`
@@ -284,10 +300,13 @@ export class CzbGitNoticeService {
 		const CommitItem = CommitList[CommitList.length - 1] || CommitList[0]
 		const CurrentDate = Moment()
 		const CurrentDateFormat = CurrentDate.format("MM月DD日 HH:mm:ss")
-		const CurrentHour = CurrentDate.hours()
+		// const CurrentHour = CurrentDate.hours()
 		const updatedBranchSplit = (body.ref || "").split("/")
 		const updatedBranch = updatedBranchSplit[updatedBranchSplit.length - 1] || "unknow"
-		const projectChineseName = (this.projectInfo[typeof ProjectName === "string" ? ProjectName.toLocaleLowerCase() : "unknow"] || {}).name || "未知项目"
+		let projectMatchItem = this.projectInfo[typeof ProjectName === "string" ? ProjectName.toLocaleLowerCase() : "unknow"]
+		type TProjectInfoValue = typeof projectMatchItem
+		projectMatchItem = (projectMatchItem || {}) as TProjectInfoValue
+		const projectChineseName = projectMatchItem.name || "未知项目"
 		const IsMaster = updatedBranch === "master"
 		const SubContent = IsMaster ? "\n主线分支更新啦~" : "\n收到关键分支更新提醒"
 		let notPush = false
@@ -316,12 +335,12 @@ export class CzbGitNoticeService {
 				})
 				const noticeDevelop = LastAuthor.split("（")[0]
 				this.noticeService.submitMsgForCzb(`${pushHavaMainFileChangeNoticeText}\n\)`, {
-					noticeMember: [noticeDevelop]
+					noticeMember: [projectMatchItem.Maintainer, noticeDevelop]
 				})
 			}
 		}
 		if (ProjectName !== "mp" && !IsMaster) {
-			// 除了Mp项目其他的就不推了
+			// 除了Mp项目其他的非master就不推了
 			notPush = true
 		}
 		if (notPush) {
@@ -351,7 +370,9 @@ export class CzbGitNoticeService {
 				title: pushTitle,
 				description: pushDescription
 			})
-			this.noticeService.submitMsgForCzb(`【${projectChineseName}】已经收到更新~\n请大家检查各自的开发分支和有依赖的相关分支进行及时的更新。`)
+			this.noticeService.submitMsgForCzb(`【${projectChineseName}】已经收到更新~\n请大家检查各自的开发分支和有依赖的相关分支进行及时的更新。`, {
+				noticeMember: [projectMatchItem.Maintainer]
+			})
 			return true
 		} catch (err) {
 			this.loggerService.write("warning", err)

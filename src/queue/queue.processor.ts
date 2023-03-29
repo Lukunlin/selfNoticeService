@@ -7,6 +7,14 @@ import allowRetry from "../utils/allowRetry"
 @Processor("noticeMsg")
 export class NoticeMsgProcessor {
 	httpService = new HttpService()
+	memberMailList = {
+		Colin: "f-1388018372420088742",
+		杨志勇: "8520122812276689631",
+		黄星华: "f-4017398065683870476",
+		霍松锋: "f-6426389281104510066",
+		朱秋影: "005689",
+		张威: "607396662"
+	}
 
 	protected readonly targetUrl: string = `https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=${process.env.WECHOM_NOTICE_SELF}`
 	protected readonly targetCzbUrl: string = `https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=${process.env.WECHOM_NOTICE_DEPARTMENT}`
@@ -49,14 +57,13 @@ export class NoticeMsgProcessor {
 			mentioned_mobile_list: noticeList
 		}
 		if (JobOptions.noticeMember && JobOptions.noticeMember.length && process.env.SAAS_MEMBER_QUERY_SERVICE) {
-			let noticeMemberIds: string[] = []
+			const noticeMemberIds: string[] = []
 			try {
-				const targetQueryUrl = decodeURIComponent(process.env.SAAS_MEMBER_QUERY_SERVICE)
-				const queryMemberResult = await this.httpService.get(targetQueryUrl, { params: { names: JobOptions.noticeMember.join(",") } }).toPromise()
-				if (queryMemberResult.data) {
-					noticeMemberIds = queryMemberResult.data.split("|").filter((e) => e && e !== "@all" && e !== "f-1388018372420088742")
-					SendData.mentioned_list = noticeMemberIds
-				}
+				JobOptions.noticeMember.forEach((every: string) => {
+					const itValue = this.memberMailList[every]
+					itValue && noticeMemberIds.push(itValue)
+				})
+				SendData.mentioned_list = noticeMemberIds
 			} catch (err) {
 				// 错误了就不查询了
 			}
