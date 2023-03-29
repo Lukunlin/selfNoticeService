@@ -126,6 +126,7 @@ export class CzbGitNoticeService {
 	constructor(private readonly httpService: HttpService, private readonly noticeService: NoticeWecomService, private readonly loggerService: LoggerService) {
 		this.wegeTabkleData = this.getWegeTableData()
 		this.wegeTabkleUrl = `https://api.vika.cn/fusion/v1/datasheets/${this.wegeTabkleData.database}/records?viewId=${this.wegeTabkleData.viewId}`
+		this.targetCzbFeishu = `https://open.feishu.cn/open-apis/bot/v2/hook/${process.env.FEISHU_NOTICE_DEPARTMENT}`
 	}
 
 	protected readonly bannerImgArray: string[] = [
@@ -221,6 +222,7 @@ export class CzbGitNoticeService {
 	protected readonly targetUrl: string = `https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=${process.env.WECHOM_NOTICE_DEPARTMENT}`
 	protected wegeTabkleData?: IWegeTableEnvData
 	protected wegeTabkleUrl?: string = ""
+	protected targetCzbFeishu?: string = ""
 
 	protected getRandomNumber(minNum: number, maxNum: number): number {
 		switch (arguments.length) {
@@ -265,7 +267,7 @@ export class CzbGitNoticeService {
 		}
 	}
 	protected pushNewsMsgToWecom(data: IPushNewsMsgToWecom, retriesLeft = 5, interval = 1000) {
-		return allowRetry(
+		allowRetry(
 			() =>
 				this.httpService
 					.post(this.targetUrl, {
@@ -279,6 +281,19 @@ export class CzbGitNoticeService {
 									description: data.description
 								}
 							]
+						}
+					})
+					.toPromise(),
+			retriesLeft,
+			interval
+		)
+		allowRetry(
+			() =>
+				this.httpService
+					.post(this.targetCzbFeishu, {
+						msg_type: "text",
+						content: {
+							text: `${data.title}\r\n${data.description}`
 						}
 					})
 					.toPromise(),
