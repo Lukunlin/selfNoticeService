@@ -213,7 +213,7 @@ export class CzbGitNoticeService {
 			mainFile: ["src/main.ts", "vite.config.ts", "src/app.vue", "utils/request.ts", "utils/service.ts", "utils/common.ts", "types/global.d.ts"],
 			Maintainer: "张威"
 		},
-		"starCloudLink-micro": {
+		"starcloudlink-micro": {
 			name: "星云链小程序",
 			mainFile: ["run.sh", "babel.config.js", "package.json", "src/app.tsx", "src/app.config.ts", "src/utils/common.ts", "src/api/service/interceptors.ts", "src/api/service/index.ts"],
 			Maintainer: "朱秋影"
@@ -306,7 +306,8 @@ export class CzbGitNoticeService {
 		return this.bannerImgArray[randomNumber]
 	}
 	public async pushNewsToWecom(body: IGitlabWebHooks) {
-		const ProjectName = body.project.name || "unknow"
+		const ProjectNameOrigin = body.project.name || "unknow"
+		const ProjectName = typeof ProjectNameOrigin === "string" ? ProjectNameOrigin.toLocaleLowerCase() : "unknow"
 		const LastAuthor = body.user_name || "unknow"
 		const Warehouse = body.project.web_url || "https://gitlab.nlsaas.com"
 		const Method = body.event_name
@@ -318,7 +319,7 @@ export class CzbGitNoticeService {
 		// const CurrentHour = CurrentDate.hours()
 		const updatedBranchSplit = (body.ref || "").split("/")
 		const updatedBranch = updatedBranchSplit[updatedBranchSplit.length - 1] || "unknow"
-		let projectMatchItem = this.projectInfo[typeof ProjectName === "string" ? ProjectName.toLocaleLowerCase() : "unknow"]
+		let projectMatchItem = this.projectInfo[ProjectName]
 		type TProjectInfoValue = typeof projectMatchItem
 		projectMatchItem = (projectMatchItem || {}) as TProjectInfoValue
 		const projectChineseName = projectMatchItem.name || "未知项目"
@@ -361,7 +362,7 @@ export class CzbGitNoticeService {
 		if (notPush) {
 			return false
 		}
-		const pushTitle = `${projectChineseName}  [${ProjectName}]${SubContent}`
+		const pushTitle = `${projectChineseName}  [${ProjectNameOrigin}]${SubContent}`
 		let pushDescription = `\n本次更新分支为: 【 ${updatedBranch} 】`
 		pushDescription += `\n--------------------------------------`
 		pushDescription += `\n操作人: ${LastAuthor}`
