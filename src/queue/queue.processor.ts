@@ -18,6 +18,7 @@ export class NoticeMsgProcessor {
 
 	protected readonly targetUrl: string = `https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=${process.env.WECHOM_NOTICE_SELF}`
 	protected readonly targetCzbUrl: string = `https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=${process.env.WECHOM_NOTICE_DEPARTMENT}`
+	protected readonly targetCzbFeishu: string = `https://open.feishu.cn/open-apis/bot/v2/hook/${process.env.FEISHU_NOTICE_DEPARTMENT}`
 
 	@Process("noticeMessage")
 	handleTranscode(job: Job) {
@@ -74,6 +75,20 @@ export class NoticeMsgProcessor {
 					.post(this.targetCzbUrl, {
 						msgtype: "text",
 						text: SendData
+					})
+					.toPromise()
+			},
+			5,
+			1000
+		)
+		allowRetry(
+			() => {
+				return this.httpService
+					.post(this.targetCzbFeishu, {
+						msg_type: "text",
+						content: {
+							text: `${SendData.content}\r\n\r\n请以下人员保持关注:    ${JobOptions.noticeMember.join(", ")}`
+						}
 					})
 					.toPromise()
 			},
