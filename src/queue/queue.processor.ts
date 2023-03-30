@@ -116,5 +116,37 @@ export class NoticeMsgProcessor {
 			5,
 			1000
 		)
+		if (options.feishuData && options.feishuData.content) {
+			allowRetry(
+				() => {
+					return this.httpService
+						.post(this.targetCzbFeishu, {
+							msg_type: "interactive",
+							card: {
+								config: {
+									update_multi: true,
+									wide_screen_mode: true
+								},
+								header: {
+									title: {
+										tag: "plain_text",
+										content: options.feishuData.title || "能链Saas版本全量放流通知服务"
+									}
+								},
+								elements: [
+									{
+										tag: "markdown",
+										text_align: "left",
+										content: options.feishuData.content
+									}
+								]
+							}
+						})
+						.toPromise()
+				},
+				5,
+				1000
+			)
+		}
 	}
 }

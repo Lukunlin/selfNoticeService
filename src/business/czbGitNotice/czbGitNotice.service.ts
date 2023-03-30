@@ -518,15 +518,16 @@ export class CzbGitNoticeService {
 
                                             > ### 项目第一版本发布时间： \`<font color=Orange>${FirstLine.fld7R1Iu2zFt6}</font>\`
 
-                                            > 本次版本标识符号为: {{ <font color=Red size=26>**${FirstLine.fldlgzJWRBBDk}**</font> }}
+                                            > 本次版本标识符号为： {{ <font color=Red size=26>**${FirstLine.fldlgzJWRBBDk}**</font> }}
 
                                             > 本次全部上线的项目有 {${SET_RELEASE_PROJECT.size}} 个： \r\n${RELEASE_PROJECT_ALL_TEXT}
                                             ${RELEASE_FIXBUG_ALL_CONTENT}
 
                                             ##### <font color=Blue>请在线上再次验证完毕后 ,把相关客户端合并回 \`Master\`， 届时会重新收到 Master更新的服务通知</font>
                                         `
+						const MARKDOWN_FEISHU = `放流时间： **${DATE_FORMAT}**\r\r项目灰度开始日期： ${FirstLine.fldGUSH9ZdTWm}\r\r项目第一版本发布时间： ${FirstLine.fld7R1Iu2zFt6}\r\r**本次版本标识符号为： {{ <font color='red'>${FirstLine.fldlgzJWRBBDk}</font> }}**\r\r本次全部上线的项目有 {{ ${SET_RELEASE_PROJECT.size} }}： \r${RELEASE_PROJECT_ALL_TEXT}\r\r${RELEASE_FIXBUG_ALL_CONTENT}\r\r**请在线上再次验证完毕后 ,把相关客户端合并回 <font color='green'>Master</font>， 届时会重新收到 Master更新的服务通知**\r<at id=all></at>`
 						setTimeout(() => {
-							this.noticeService.submitMarkdownForCzb(MARKDOWN)
+							this.noticeService.submitMarkdownForCzb(MARKDOWN, { feishuData: { title: "能链Saas版本全量放流通知服务", content: MARKDOWN_FEISHU } })
 						}, 8000)
 					}
 				}
